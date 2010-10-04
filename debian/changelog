@@ -1,0 +1,5 @@
+fped (0.0+r5974-1) unstable; urgency=low
+
+  * Initial release (Closes: #599090).
+
+ -- Xiangfu Liu <xiangfu@sharism.cc>  Mon, 04 Oct 2010 23:27:52 +0800

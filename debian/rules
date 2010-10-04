@@ -1,0 +1,27 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/autotools.mk
+
+DEB_INSTALL_MANPAGES_dfu-util := doc/dfu-util.1
+
+# We must first call ./autogen.sh to generate the autotools stuff.
+post-patches:: debian/stamp-autothings-update
+debian/stamp-autothings-update:
+	@#aclocal
+	@#autoheader
+	@#automake --foreign --add-missing --copy
+	@#autoconf
+	./autogen.sh
+	touch $@
+
+# Do not install the dfu-util_static binary, it's not needed in Debian.
+binary-post-install/dfu-util::
+	rm -f debian/dfu-util/usr/bin/dfu-util_static
+
+clean::
+	rm -f debian/stamp-autothings-update
+	@# Delete generated files, we don't want them in the diff.
+	rm -f aclocal.m4 config.h.in configure Makefile.in m4/install-sh
+	rm -f m4/missing m4/depcomp src/Makefile.in src/dfu-version.h
+
