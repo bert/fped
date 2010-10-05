@@ -1,27 +1,22 @@
 #!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
 
-include /usr/share/cdbs/1/rules/debhelper.mk
-include /usr/share/cdbs/1/class/autotools.mk
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
 
-DEB_INSTALL_MANPAGES_dfu-util := doc/dfu-util.1
+export PREFIX=/usr
 
-# We must first call ./autogen.sh to generate the autotools stuff.
-post-patches:: debian/stamp-autothings-update
-debian/stamp-autothings-update:
-	@#aclocal
-	@#autoheader
-	@#automake --foreign --add-missing --copy
-	@#autoconf
-	./autogen.sh
-	touch $@
+REV=5974
+debiandir_SQ = $(subst ','\'',$(dir $(lastword $(MAKEFILE_LIST))))
+get-orig-source:
+	REV='$(REV)' sh '$(debiandir_SQ)'get-orig-source.sh
 
-# Do not install the dfu-util_static binary, it's not needed in Debian.
-binary-post-install/dfu-util::
-	rm -f debian/dfu-util/usr/bin/dfu-util_static
+override_dh_auto_test:
 
-clean::
-	rm -f debian/stamp-autothings-update
-	@# Delete generated files, we don't want them in the diff.
-	rm -f aclocal.m4 config.h.in configure Makefile.in m4/install-sh
-	rm -f m4/missing m4/depcomp src/Makefile.in src/dfu-version.h
-
+%:
+	dh $@
