@@ -16,5 +16,8 @@ debiandir_SQ = $(subst ','\'',$(dir $(lastword $(MAKEFILE_LIST))))
 get-orig-source:
 	REV='$(REV)' sh '$(debiandir_SQ)'get-orig-source.sh
 
+override_dh_auto_clean:
+	make spotless
+
 %:
 	dh $@
