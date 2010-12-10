@@ -1,3 +1,13 @@
+fped (0.0+r5997-1) lucid; urgency=low
+
+  * Fix "FTBFS: tsort: cycle: ./Common: line 37:  2851 Aborted"
+    This was a "false error" - the regression test is supposed to cause
+    fped to abort, which it did, but the shell didn't print "Aborted" on
+    that(Debian on Renesas SH(sh4) CPU) platform (Closes: #606536).
+  * update the homepage to help webpage, not svn source code page.
+
+ -- Xiangfu Liu <xiangfu@sharism.cc>  Fri, 10 Dec 2010 15:51:58 +0800
+
 fped (0.0+r5986-1) unstable; urgency=low
 
   * Initial release (Closes: #599090).
