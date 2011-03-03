@@ -99,6 +99,7 @@ static GtkItemFactoryEntry menu_entries[] = {
 	{ "/File/Save as",	NULL,	save_as_fpd,	0, "<Item>" },
         { "/File/sep1",		NULL,	NULL,		0, "<Separator>" },
         { "/File/Write KiCad module",	NULL,	write_kicad,	0, "<Item>" },
+        { "/File/Write PCB footprint",	NULL,	write_pcb,	0, "<Item>" },
         { "/File/Write Postscript",
 				NULL,	write_ps,	0, "<Item>" },
         { "/File/sep2",		NULL,	NULL,		0, "<Separator>" },
