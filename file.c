@@ -19,6 +19,7 @@
 
 #include "dump.h"
 #include "kicad.h"
+#include "pcb.h"
 #include "postscript.h"
 #include "util.h"
 #include "file.h"
@@ -75,6 +76,31 @@ int save_to(const char *name, int (*fn)(FILE *file))
 		return 0;
 	}
 	return 1;
+}
+
+
+int
+pcb_save_to (const char *name, int (*fn)(FILE *file))
+{
+        FILE *file;
+
+        file = fopen (name, "w");
+        if (!file)
+        {
+                perror (name);
+                return 0;
+        }
+        if (!fn (file))
+        {
+                perror (name);
+                return 0;
+        }
+        if (fclose (file) == EOF)
+        {
+                perror (name);
+                return 0;
+        }
+        return 1;
 }
 
 
@@ -166,6 +192,26 @@ void write_kicad(void)
 		if (!kicad(stdout))
 			perror("stdout");
 	}
+}
+
+
+void write_pcb (void)
+{
+        char *name;
+
+        if (save_file_name)
+        {
+                name = set_extension (save_file_name, "fp");
+                pcb_save_to (name, pcb);
+                free (name);
+        }
+        else
+        {
+                if (!pcb (stdout))
+                {
+                        perror ("stdout");
+                }
+        }
 }
 
 

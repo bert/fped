@@ -24,10 +24,12 @@ int file_exists(const char *name);
 
 char *set_extension(const char *name, const char *ext);
 int save_to(const char *name, int (*fn)(FILE *file));
+int pcb_save_to(const char *name, int (*fn)(FILE *file));
 void save_with_backup(const char *name, int (*fn)(FILE *file));
 
 void save_fpd(void);
 void write_kicad(void);
+void write_pcb(void);
 void write_ps(void);
 void write_ps_fullpage(void);
 
