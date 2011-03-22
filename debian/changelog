@@ -1,3 +1,9 @@
+fped (0.0+r5999-1) lucid; urgency=low
+
+  * update to r5999
+
+ -- Xiangfu Liu <xiangfu@sharism.cc>  Tue, 22 Mar 2011 15:12:02 +0800
+
 fped (0.0+r5997-1) lucid; urgency=low
 
   * Fix "FTBFS: tsort: cycle: ./Common: line 37:  2851 Aborted"

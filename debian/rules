@@ -11,7 +11,7 @@
 
 export PREFIX=/usr
 
-REV=5997
+REV=5999
 debiandir_SQ = $(subst ','\'',$(dir $(lastword $(MAKEFILE_LIST))))
 get-orig-source:
 	REV='$(REV)' sh '$(debiandir_SQ)'get-orig-source.sh
