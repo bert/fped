@@ -1,3 +1,9 @@
+fped (0.0+r6005-1) lucid; urgency=low
+
+  * update to r6005
+
+ -- Xiangfu Liu <xiangfu@sharism.cc>  Wed, 23 Mar 2011 16:28:26 +0800
+
 fped (0.0+r5999-1) lucid; urgency=low
 
   * update to r5999
