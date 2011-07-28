@@ -1,8 +1,8 @@
 #
 # Makefile - Makefile of fped, the footprint editor
 #
-# Written 2009, 2010 by Werner Almesberger
-# Copyright 2009, 2010 by Werner Almesberger
+# Written 2009-2011 by Werner Almesberger
+# Copyright 2009-2011 by Werner Almesberger
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ LIBS_GTK = `pkg-config --libs gtk+-2.0`
 CFLAGS_WARN = -Wall -Wshadow -Wmissing-prototypes \
 	      -Wmissing-declarations -Wno-format-zero-length
 CFLAGS = -g -std=gnu99 $(CFLAGS_GTK) -DCPP='"cpp"' \
-         -DSVN_VERSION='"$(SVN_VERSION)$(SVN_STATUS)"' $(CFLAGS_WARN)
+         -DVERSION='"$(GIT_VERSION)$(GIT_STATUS)"' $(CFLAGS_WARN)
 SLOPPY = -Wno-unused -Wno-implicit-function-declaration \
 	 -Wno-missing-prototypes -Wno-missing-declarations
 LDFLAGS =
@@ -46,9 +46,8 @@ LDLIBS = -lm -lfl $(LIBS_GTK)
 YACC = bison -y
 YYFLAGS = -v
 
-SVN_VERSION:=$(shell svn info -R | sed '/Last Changed Rev: /s///p;d' | \
-    sort -r | sed 1q)
-SVN_STATUS:=$(shell [ -z "`svn status -q`" ] || echo +)
+GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
+GIT_STATUS:=$(shell [ -z "`git status -s -uno`" ] || echo +)
 
 
 # ----- Verbosity control -----------------------------------------------------
@@ -188,9 +187,3 @@ install:	all
 
 uninstall:
 		rm -f $(DESTDIR)/$(PREFIX)/bin/fped
-
-# ----- SVN update ------------------------------------------------------------
-
-update:
-		svn update
-		$(MAKE) dep all
