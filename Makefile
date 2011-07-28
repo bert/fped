@@ -12,7 +12,7 @@
 
 PREFIX ?= /usr/local
 
-UPLOAD = werner@sita.openmoko.org:public_html/fped/
+UPLOAD = www-data@downloads.qi-hardware.com:werner/fped/
 
 OBJS = fped.o expr.o coord.o obj.o delete.o inst.o util.o error.o \
        unparse.o file.o dump.o kicad.o postscript.o meas.o \

@@ -7,7 +7,7 @@ Build-Depends: debhelper (>=  7.4.10), pkg-config,
 	imagemagick, transfig, netpbm, ghostscript,
 	libgtk2.0-dev 
 Standards-Version: 3.9.1
-Homepage: http://people.openmoko.org/werner/fped/gui.html
+Homepage: http://downloads.qi-hardware.com/people/werner/fped/gui.html
 
 Package: fped
 Architecture: any
@@ -20,5 +20,5 @@ Description: Footprint editor
  the textual definition also has a straightforward equivalent operation
  that can be performed through the GUI.
  A description of the GUI can be found here:
- http://people.openmoko.org/werner/fped/gui.html
+ http://downloads.qi-hardware.com/people/werner/fped/gui.html
 
