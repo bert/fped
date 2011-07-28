@@ -83,7 +83,7 @@ endif
 
 .PHONY:		all dep depend clean spotless
 .PHONY:		install uninstall manual upload-manual
-.PHONY:		update montage test tests valgrind
+.PHONY:		montage test tests valgrind
 
 .SUFFIXES:	.fig .xpm .ppm
 
