@@ -15,7 +15,7 @@ PREFIX ?= /usr/local
 UPLOAD = www-data@downloads.qi-hardware.com:werner/fped/
 
 OBJS = fped.o expr.o coord.o obj.o delete.o inst.o util.o error.o \
-       unparse.o file.o dump.o kicad.o postscript.o meas.o \
+       unparse.o file.o dump.o kicad.o postscript.o gnuplot.o meas.o \
        layer.o overlap.o hole.o tsort.o bitset.o \
        cpp.o lex.yy.o y.tab.o \
        gui.o gui_util.o gui_style.o gui_inst.o gui_status.o gui_canvas.o \

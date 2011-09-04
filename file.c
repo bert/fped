@@ -20,6 +20,7 @@
 #include "dump.h"
 #include "kicad.h"
 #include "postscript.h"
+#include "gnuplot.h"
 #include "util.h"
 #include "file.h"
 #include "fped.h"
@@ -196,4 +197,19 @@ void write_ps(const char *one)
 void write_ps_fullpage(const char *one)
 {
 	do_write_ps(postscript_fullpage, one);
+}
+
+
+void write_gnuplot(const char *one)
+{
+	char *name;
+
+	if (save_file_name) {
+		name = set_extension(save_file_name, "gp");
+		save_to(name, gnuplot, one);
+		free(name);
+	} else {
+		if (!gnuplot(stdout, one))
+			perror("stdout");
+	}
 }

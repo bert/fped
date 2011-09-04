@@ -69,15 +69,17 @@ static void usage(const char *name)
 	fprintf(stderr,
 "usage: %s [batch_mode] [cpp_option ...] [in_file [out_file]]\n\n"
 "Batch mode options:\n"
+"  -g [-1 package]\n"
+"              write gnuplot output, then exit\n"
 "  -k          write KiCad output, then exit\n"
 "  -p          write Postscript output, then exit\n"
 "  -P [-s scale] [-1 package]\n"
 "              write Postscript output (full page), then exit\n"
-"    -1 name   output only the specified package\n"
-"    -s scale  scale factor for -P (default: auto-scale)\n"
 "  -T          test mode. Load file, then exit\n"
 "  -T -T       test mode. Load file, dump to stdout, then exit\n\n"
 "Common options:\n"
+"  -1 name     output only the specified package\n"
+"  -s scale    scale factor for -P (default: auto-scale)\n"
 "  cpp_option  -Idir, -Dname[=value], or -Uname\n"
     , name);
 	exit(1);
@@ -91,6 +93,7 @@ int main(int argc, char **argv)
 		batch_kicad,
 		batch_ps,
 		batch_ps_fullpage,
+		batch_gnuplot,
 		batch_test
 	} batch = batch_none;
 	char *name = *argv;
@@ -104,10 +107,15 @@ int main(int argc, char **argv)
 	const char *one = NULL;
 	int c;
 
-	while ((c = getopt(argc, argv, "1:kps:D:I:PTU:")) != EOF)
+	while ((c = getopt(argc, argv, "1:gkps:D:I:PTU:")) != EOF)
 		switch (c) {
 		case '1':
 			one = optarg;
+			break;
+		case 'g':
+			if (batch)
+				usage(*argv);
+			batch = batch_gnuplot;
 			break;
 		case 'k':
 			if (batch)
@@ -146,7 +154,8 @@ int main(int argc, char **argv)
 			usage(name);
 		}
 
-	if (one && batch != batch_ps && batch != batch_ps_fullpage)
+	if (one && batch != batch_ps && batch != batch_ps_fullpage &&
+	    batch != batch_gnuplot)
 		usage(name);
 
 	if (!batch) {
@@ -199,6 +208,9 @@ int main(int argc, char **argv)
 		break;
 	case batch_ps_fullpage:
 		write_ps_fullpage(one);
+		break;
+	case batch_gnuplot:
+		write_gnuplot(one);
 		break;
 	case batch_test:
 		dump(stdout, NULL);

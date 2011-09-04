@@ -32,5 +32,6 @@ void save_fpd(void);
 void write_kicad(void);
 void write_ps(const char *one);
 void write_ps_fullpage(const char *one);
+void write_gnuplot(const char *one);
 
 #endif /* !FILE_H */
