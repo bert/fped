@@ -1,8 +1,8 @@
 /*
  * fped.c - Footprint editor, main function
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009-2011 by Werner Almesberger
+ * Copyright 2009-2011 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,22 +67,35 @@ static void load_file(const char *name)
 static void usage(const char *name)
 {
 	fprintf(stderr,
-"usage: %s [-k] [-p|-P [-s scale]] [-T [-T]] [cpp_option ...]\n"
-"       %*s [in_file [out_file]]\n\n"
+"usage: %s [batch_mode] [cpp_option ...] [in_file [out_file]]\n\n"
+"Batch mode options:\n"
+"  -g [-1 package]\n"
+"              write gnuplot output, then exit\n"
 "  -k          write KiCad output, then exit\n"
 "  -p          write Postscript output, then exit\n"
-"  -P          write Postscript output (full page), then exit\n"
-"  -s scale    scale factor for -P (default: auto-scale)\n"
+"  -P [-s scale] [-1 package]\n"
+"              write Postscript output (full page), then exit\n"
 "  -T          test mode. Load file, then exit\n"
-"  -T -T       test mode. Load file, dump to stdout, then exit\n"
+"  -T -T       test mode. Load file, dump to stdout, then exit\n\n"
+"Common options:\n"
+"  -1 name     output only the specified package\n"
+"  -s scale    scale factor for -P (default: auto-scale)\n"
 "  cpp_option  -Idir, -Dname[=value], or -Uname\n"
-    , name, (int) strlen(name), "");
+    , name);
 	exit(1);
 }
 
 
 int main(int argc, char **argv)
 {
+	enum {
+		batch_none = 0,
+		batch_kicad,
+		batch_ps,
+		batch_ps_fullpage,
+		batch_gnuplot,
+		batch_test
+	} batch = batch_none;
 	char *name = *argv;
 	char **fake_argv;
 	char *args[2];
@@ -90,32 +103,44 @@ int main(int argc, char **argv)
 	char opt[] = "-?";
 	char *end;
 	int error;
-	int batch = 0;
 	int test_mode = 0;
-	int batch_write_kicad = 0;
-	int batch_write_ps = 0, batch_write_ps_fullpage = 0;
+	const char *one = NULL;
 	int c;
 
-	while ((c = getopt(argc, argv, "kps:D:I:PTU:")) != EOF)
+	while ((c = getopt(argc, argv, "1:gkps:D:I:PTU:")) != EOF)
 		switch (c) {
+		case '1':
+			one = optarg;
+			break;
+		case 'g':
+			if (batch)
+				usage(*argv);
+			batch = batch_gnuplot;
+			break;
 		case 'k':
-			batch_write_kicad = 1;
+			if (batch)
+				usage(*argv);
+			batch = batch_kicad;
 			break;
 		case 'p':
-			batch_write_ps = 1;
+			if (batch)
+				usage(*argv);
+			batch = batch_ps;
 			break;
 		case 'P':
-			batch_write_ps_fullpage = 1;
+			if (batch)
+				usage(*argv);
+			batch = batch_ps_fullpage;
 			break;
 		case 's':
-			if (!batch_write_ps_fullpage)
+			if (batch != batch_ps_fullpage)
 				usage(*argv);
 			postscript_params.zoom = strtod(optarg, &end);
 			if (*end)
 				usage(*argv);
 			break;
 		case 'T':
-			batch = 1;
+			batch = batch_test;
 			test_mode++;
 			break;
 		case 'D':
@@ -129,11 +154,9 @@ int main(int argc, char **argv)
 			usage(name);
 		}
 
-	if (batch_write_ps && batch_write_ps_fullpage)
+	if (one && batch != batch_ps && batch != batch_ps_fullpage &&
+	    batch != batch_gnuplot)
 		usage(name);
-
-	if (batch_write_kicad || batch_write_ps || batch_write_ps_fullpage)
-		batch = 1;
 
 	if (!batch) {
 		args[0] = name;
@@ -171,19 +194,30 @@ int main(int argc, char **argv)
 	if (!instantiate())
 		return 1;
 
-	if (batch_write_kicad)
-		write_kicad();
-	if (batch_write_ps)
-		write_ps();
-	if (batch_write_ps_fullpage)
-		write_ps_fullpage();
-	if (!batch) {
+	switch (batch) {
+	case batch_none:
 		error = gui_main();
 		if (error)
 			return error;
+		break;
+	case batch_kicad:
+		write_kicad();
+		break;
+	case batch_ps:
+		write_ps(one);
+		break;
+	case batch_ps_fullpage:
+		write_ps_fullpage(one);
+		break;
+	case batch_gnuplot:
+		write_gnuplot(one);
+		break;
+	case batch_test:
+		dump(stdout, NULL);
+		break;
+	default:
+		abort();
 	}
-	if (test_mode > 1)
-		dump(stdout);
 
 	purge();
 	inst_revert();

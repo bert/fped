@@ -1,8 +1,8 @@
 /*
  * gui.c - Editor GUI core
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009-2011 by Werner Almesberger
+ * Copyright 2009-2011 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -386,9 +386,9 @@ int gui_main(void)
 	root = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_position(GTK_WINDOW(root), GTK_WIN_POS_CENTER);
 	gtk_window_set_default_size(GTK_WINDOW(root), 620, 460);
-	if (*SVN_VERSION)
+	if (*VERSION)
 		gtk_window_set_title(GTK_WINDOW(root),
-		    "fped (rev " SVN_VERSION ")");
+		    "fped (rev " VERSION ")");
 	else
 		gtk_window_set_title(GTK_WINDOW(root), "fped");
 

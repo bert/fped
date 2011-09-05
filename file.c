@@ -1,8 +1,8 @@
 /*
  * file.c - File handling
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009-2011 by Werner Almesberger
+ * Copyright 2009-2011 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "kicad.h"
 #include "pcb.h"
 #include "postscript.h"
+#include "gnuplot.h"
 #include "util.h"
 #include "file.h"
 #include "fped.h"
@@ -58,7 +59,8 @@ int file_exists(const char *name)
 }
 
 
-int save_to(const char *name, int (*fn)(FILE *file))
+int save_to(const char *name, int (*fn)(FILE *file, const char *one),
+    const char *one)
 {
 	FILE *file;
 
@@ -67,7 +69,7 @@ int save_to(const char *name, int (*fn)(FILE *file))
 		perror(name);
 		return 0;
 	}
-	if (!fn(file)) {
+	if (!fn(file, one)) {
 		perror(name);
 		return 0;
 	}
@@ -104,7 +106,8 @@ pcb_save_to (const char *name, int (*fn)(FILE *file))
 }
 
 
-void save_with_backup(const char *name, int (*fn)(FILE *file))
+void save_with_backup(const char *name, int (*fn)(FILE *file, const char *one),
+    const char *one)
 {
 	char *s = stralloc(name);
 	char *back, *tmp;
@@ -122,7 +125,7 @@ void save_with_backup(const char *name, int (*fn)(FILE *file))
 		*slash = '/';
 	}
 
-	if (!save_to(tmp, fn))
+	if (!save_to(tmp, fn, one))
 		return;
 
 	/* move existing file out of harm's way */
@@ -172,9 +175,9 @@ void save_with_backup(const char *name, int (*fn)(FILE *file))
 void save_fpd(void)
 {
 	if (save_file_name)
-		save_with_backup(save_file_name, dump);
+		save_with_backup(save_file_name, dump, NULL);
 	else {
-		if (!dump(stdout))
+		if (!dump(stdout, NULL))
 			perror("stdout");
 	}
 }
@@ -186,10 +189,10 @@ void write_kicad(void)
 
 	if (save_file_name) {
 		name = set_extension(save_file_name, "mod");
-		save_to(name, kicad);
+		save_to(name, kicad, NULL);
 		free(name);
 	} else {
-		if (!kicad(stdout))
+		if (!kicad(stdout, NULL))
 			perror("stdout");
 	}
 }
@@ -215,28 +218,44 @@ void write_pcb (void)
 }
 
 
-static void do_write_ps(int (*fn)(FILE *file))
+static void do_write_ps(int (*fn)(FILE *file, const char *one),
+    const char *one)
 {
 	char *name;
 
 	if (save_file_name) {
 		name = set_extension(save_file_name, "ps");
-		save_to(name, fn);
+		save_to(name, fn, one);
 		free(name);
 	} else {
-		if (!fn(stdout))
+		if (!fn(stdout, one))
 			perror("stdout");
 	}
 }
 
 
-void write_ps(void)
+void write_ps(const char *one)
 {
-	do_write_ps(postscript);
+	do_write_ps(postscript, one);
 }
 
 
-void write_ps_fullpage(void)
+void write_ps_fullpage(const char *one)
 {
-	do_write_ps(postscript_fullpage);
+	do_write_ps(postscript_fullpage, one);
+}
+
+
+void write_gnuplot(const char *one)
+{
+	char *name;
+
+	if (save_file_name) {
+		name = set_extension(save_file_name, "gp");
+		save_to(name, gnuplot, one);
+		free(name);
+	} else {
+		if (!gnuplot(stdout, one))
+			perror("stdout");
+	}
 }

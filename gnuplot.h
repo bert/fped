@@ -1,8 +1,8 @@
 /*
- * kicad.h - Dump objects in the KiCad board/module format
+ * gnuplot.h - Dump objects in gnuplot 2D format
  *
- * Written 2009, 2011 by Werner Almesberger
- * Copyright 2009, 2011 by Werner Almesberger
+ * Written 2011 by Werner Almesberger
+ * Copyright 2011 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -11,12 +11,12 @@
  */
 
 
-#ifndef KICAD_H
-#define KICAD_H
+#ifndef GNUPLOT_H
+#define GNUPLOT_H
 
 #include <stdio.h>
 
 
-int kicad(FILE *file, const char *one);
+int gnuplot(FILE *file, const char *one);
 
-#endif /* !KICAD_H */
+#endif /* !GNUPLOT_H */

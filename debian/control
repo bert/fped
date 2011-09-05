@@ -1,0 +1,24 @@
+Source: fped
+Section: electronics
+Priority: extra
+Maintainer: Xiangfu Liu <xiangfu@sharism.cc>
+Build-Depends: debhelper (>=  7.4.10), pkg-config, 
+	bash (>= 4), flex, bison, 
+	imagemagick, transfig, netpbm, ghostscript,
+	libgtk2.0-dev 
+Standards-Version: 3.9.1
+Homepage: http://downloads.qi-hardware.com/people/werner/fped/gui.html
+
+Package: fped
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Footprint editor
+ fped is an editor that allows the interactive creation of footprints of
+ electronic components. Footprint definitions are stored in a text format
+ that resembles a programming language.
+ The language is constrained such that anything that can be expressed in
+ the textual definition also has a straightforward equivalent operation
+ that can be performed through the GUI.
+ A description of the GUI can be found here:
+ http://downloads.qi-hardware.com/people/werner/fped/gui.html
+
