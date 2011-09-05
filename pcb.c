@@ -203,7 +203,7 @@ pcb_pad
 
 
 /*!
- * \brief Print information for a \c pad in the PCB footprint \c file . \n
+ * \brief Print information for a \c pin in the PCB footprint \c file . \n
  * 
  * Current PCB format: \n
  * Pin [rX rY Thickness Clearance Mask Drill "Name" "Number" SFlags] \n
