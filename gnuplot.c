@@ -11,7 +11,6 @@
  */
 
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -101,33 +100,30 @@ static void gnuplot_circ(FILE *file, const struct inst *inst)
 
 static void gnuplot_arc(FILE *file, const struct inst *inst)
 {
-abort();
-#if 0
-	struct coord p;
-	double a;
+	double cx, cy, r;
+	double a, tmp;
+	int n, i;
 
-	/*
-	 * The documentation says:
-	 * Xstart, Ystart, Xend, Yend, Angle, Width, Layer
-	 *
-	 * But it's really:
-	 * Xcenter, Ycenter, Xend, Yend, ...
-	 */
-	p = rotate_r(inst->base, inst->u.arc.r, inst->u.arc.a2);
+	cx = units_to_mm(inst->base.x);
+	cy = units_to_mm(inst->base.y);
+	r = units_to_mm(inst->u.arc.r);
+
 	a = inst->u.arc.a2-inst->u.arc.a1;
 	while (a <= 0)
 		a += 360;
 	while (a > 360)
-		a -= 360;
-	fprintf(file, "DA %d %d %d %d %d %d %d\n",
-	    units_to_kicad(inst->base.x),
-	    -units_to_kicad(inst->base.y),
-	    units_to_kicad(p.x),
-	    -units_to_kicad(p.y),
-	    (int) (a*10.0),
-	    units_to_kicad(inst->u.arc.width),
-	    layer_silk_top);
-#endif
+		a =- 360;
+
+	n = ceil(2*r*M_PI/360*a/ARC_STEP);
+	if (n < 2)
+		n = 2;
+
+	for (i = 0; i <= n; i++) {
+		tmp = (inst->u.arc.a1+a/n*i)*M_PI/180;
+		fprintf(file, "%f %f\n", cx+r*cos(tmp), cy+r*sin(tmp));
+	}
+
+	fprintf(file, "\n");
 }
 
 
