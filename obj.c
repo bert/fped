@@ -1,8 +1,8 @@
 /*
  * obj.c - Object definition model
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009-2011 by Werner Almesberger
+ * Copyright 2009-2011 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -285,7 +285,8 @@ static int generate_items(struct frame *frame, struct coord base, int active)
 
 	if (frame == frames) {
 		s = expand(pkg_name, frame);
-		inst_select_pkg(s);
+		/* s is NULL if expansion failed */
+		inst_select_pkg(s ? s : "_");
 		free(s);
 	}
 	inst_begin_active(active && frame == active_frame);
