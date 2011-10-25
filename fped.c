@@ -213,7 +213,8 @@ int main(int argc, char **argv)
 		write_gnuplot(one);
 		break;
 	case batch_test:
-		dump(stdout, NULL);
+		if (test_mode > 1)
+			dump(stdout, NULL);
 		break;
 	default:
 		abort();
