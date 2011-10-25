@@ -1,8 +1,8 @@
 /*
  * gui_tool.c - GUI, tool bar
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009-2011 by Werner Almesberger
+ * Copyright 2009-2011 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ static struct vec *new_vec(struct inst *base)
 	struct vec *vec, **walk;
 
 	vec = alloc_type(struct vec);
+	vec->nul_tag = 0;
 	vec->name = NULL;
 	vec->base = inst_get_vec(base);
 	vec->next = NULL;

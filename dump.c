@@ -296,8 +296,12 @@ static void generate_name(struct vec *base)
 
 static const char *base_name(struct vec *base, const struct vec *next)
 {
+	const char *name = (const char *) base;
+
 	if (!base)
 		return "@";
+	if (*name)
+		return name;
 	if (next && base->next == next)
 		return ".";
 	if (!base->name)

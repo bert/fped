@@ -826,6 +826,7 @@ vec:
 	TOK_VEC base '(' expr ',' expr ')'
 		{
 			$$ = alloc_type(struct vec);
+			$$->nul_tag = 0;
 			$$->name = NULL;
 			$$->base = $2;
 			$$->x = $4;
@@ -854,10 +855,8 @@ base:
 	| ID
 		{
 			$$ = find_vec(curr_frame, $1);
-			if (!$$) {
-				yyerrorf("unknown vector \"%s\"", $1);
-				YYABORT;
-			}
+			if (!$$)
+				$$ = (struct vec *) $1;
 		}
 	;
 
