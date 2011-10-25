@@ -168,7 +168,15 @@ static struct num eval_unit_default(const struct expr *expr,
 }
 
 
-static int generate_vecs(struct frame *frame, struct coord base)
+static int resolve_vec(const struct vec *vec, struct coord base_pos,
+    struct coord *res)
+{
+	*res = vec ? vec->pos : base_pos;
+	return 1;
+}
+
+
+static int generate_vecs(struct frame *frame, struct coord base_pos)
 {
 	struct coord vec_base;
 	struct vec *vec;
@@ -181,7 +189,8 @@ static int generate_vecs(struct frame *frame, struct coord base)
 		y = eval_unit(vec->y, frame);
 		if (is_undef(y))
 			goto error;
-		vec_base = vec->base ? vec->base->pos : base;
+		if (!resolve_vec(vec->base, base_pos, &vec_base))
+			goto error;
 		vec->pos = vec_base;
 		vec->pos.x += x.n;
 		vec->pos.y += y.n;
@@ -197,66 +206,72 @@ error:
 }
 
 
-static int generate_objs(struct frame *frame, struct coord base, int active)
+static int generate_objs(struct frame *frame, struct coord base_pos,
+    int active)
 {
 	struct obj *obj;
 	char *name;
 	int ok;
 	struct num width, offset;
+	struct coord base, other, start, end;
 
-	for (obj = frame->objs; obj; obj = obj->next)
+	for (obj = frame->objs; obj; obj = obj->next) {
+		if (obj->type != ot_meas)
+			if (!resolve_vec(obj->base, base_pos, &base))
+				goto error;
 		switch (obj->type) {
 		case ot_frame:
-			if (!generate_frame(obj->u.frame.ref,
-			    obj->base ? obj->base->pos : base, frame, obj,
+			if (!generate_frame(obj->u.frame.ref, base, frame, obj,
 			    active && obj->u.frame.ref->active_ref == obj))
 				return 0;
 			break;
 		case ot_line:
+			if (!resolve_vec(obj->u.line.other, base_pos, &other))
+				goto error;
 			width = eval_unit_default(obj->u.line.width, frame,
 			    DEFAULT_SILK_WIDTH);
 			if (is_undef(width))
 				goto error;
-			if (!inst_line(obj, obj->base ? obj->base->pos : base,
-			    obj->u.line.other ? obj->u.line.other->pos : base,
-			    width.n))
+			if (!inst_line(obj, base, other, width.n))
 				goto error;
 			break;
 		case ot_rect:
+			if (!resolve_vec(obj->u.rect.other, base_pos, &other))
+				goto error;
 			width = eval_unit_default(obj->u.rect.width, frame,
 			    DEFAULT_SILK_WIDTH);
 			if (is_undef(width))
 				goto error;
-			if (!inst_rect(obj, obj->base ? obj->base->pos : base,
-			    obj->u.rect.other ? obj->u.rect.other->pos : base,
-			    width.n))
+			if (!inst_rect(obj, base, other, width.n))
 				goto error;
 			break;
 		case ot_pad:
+			if (!resolve_vec(obj->u.pad.other, base_pos, &other))
+				goto error;
 			name = expand(obj->u.pad.name, frame);
 			if (!name)
 				goto error;
-			ok = inst_pad(obj, name,
-			    obj->base ? obj->base->pos : base,
-			    obj->u.pad.other ? obj->u.pad.other->pos : base);
+			ok = inst_pad(obj, name, base, other);
 			free(name);
 			if (!ok)
 				goto error;
 			break;
 		case ot_hole:
-			if (!inst_hole(obj, obj->base ? obj->base->pos : base,
-			    obj->u.hole.other ? obj->u.hole.other->pos : base))
+			if (!resolve_vec(obj->u.hole.other, base_pos, &other))
+				goto error;
+			if (!inst_hole(obj, base, other))
 				goto error;
 			break;
 		case ot_arc:
+			if (!resolve_vec(obj->u.arc.start, base_pos, &start))
+				goto error;
+			if (!resolve_vec(obj->u.arc.end, base_pos, &end))
+				goto error;
 			width = eval_unit_default(obj->u.arc.width, frame,
 			    DEFAULT_SILK_WIDTH);
 			if (is_undef(width))
 				goto error;
-			if (!inst_arc(obj, obj->base ? obj->base->pos : base,
-			    obj->u.arc.start ? obj->u.arc.start->pos : base,
-			    obj->u.arc.end ? obj->u.arc.end->pos : base,
-			    width.n))
+			if (!inst_arc(obj, base, start, end, width.n))
 				goto error;
 			break;
 		case ot_meas:
@@ -270,6 +285,7 @@ static int generate_objs(struct frame *frame, struct coord base, int active)
 		default:
 			abort();
 		}
+	}
 	return 1;
 
 error:
