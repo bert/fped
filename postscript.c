@@ -577,13 +577,15 @@ static void ps_cross(FILE *file, const struct inst *inst)
 }
 
 
-static void ps_draw_package(FILE *file, const struct pkg *pkg, double zoom)
+static void ps_draw_package(FILE *file, const struct pkg *pkg, double zoom,
+    int cross)
 {
 	enum inst_prio prio;
 	const struct inst *inst;
 
 	fprintf(file, "gsave %f dup scale\n", zoom);
-	ps_cross(file, pkgs->insts[ip_frame]);
+	if (cross)
+		ps_cross(file, pkgs->insts[ip_frame]);
 	FOR_INST_PRIOS_UP(prio) {
 		FOR_PKG_INSTS(pkgs, prio, inst)
 			ps_background(file, prio, inst);
@@ -837,7 +839,7 @@ static void ps_package(FILE *file, const struct pkg *pkg, int page)
 		/* main drawing */
 		fprintf(file, "gsave %d %d translate\n",
 		    (int) (x/(f+2)*f/2)-PAGE_HALF_WIDTH, c);
-		ps_draw_package(file, pkg, f);
+		ps_draw_package(file, pkg, f, 1);
 
 		active_params = minimal_params;
 
@@ -851,17 +853,17 @@ static void ps_package(FILE *file, const struct pkg *pkg, int page)
 		/* x1 package */
 		fprintf(file, "grestore gsave %d %d translate\n",
 		    (d+PAGE_HALF_WIDTH)/2, y/6*5+PS_DIVIDER_BORDER);
-		ps_draw_package(file, pkg, 1);
+		ps_draw_package(file, pkg, 1, 1);
 
 		/* x2 package */
 		fprintf(file, "grestore gsave %d %d translate\n",
 		    (d+PAGE_HALF_WIDTH)/2, y/3+PS_DIVIDER_BORDER);
-		ps_draw_package(file, pkg, 2);
+		ps_draw_package(file, pkg, 2, 1);
 	} else if (x/(f+1) >= w && y/2 > h) {
 		/* main drawing */
 		fprintf(file, "gsave %d %d translate\n",
 		    (int) (x/(f+1)*f/2)-PAGE_HALF_WIDTH, c);
-		ps_draw_package(file, pkg, f);
+		ps_draw_package(file, pkg, f, 1);
 
 		active_params = minimal_params;
 
@@ -875,10 +877,10 @@ static void ps_package(FILE *file, const struct pkg *pkg, int page)
 		/* x1 package */
 		fprintf(file, "grestore gsave %d %d translate\n",
 		    (d+PAGE_HALF_WIDTH)/2, c);
-		ps_draw_package(file, pkg, 1);
+		ps_draw_package(file, pkg, 1, 1);
 	} else {
 		fprintf(file, "gsave 0 %d translate\n", c);
-		ps_draw_package(file, pkg, f);
+		ps_draw_package(file, pkg, f, 1);
 	}
 	fprintf(file, "grestore\n");
 
@@ -1141,7 +1143,7 @@ static void ps_package_fullpage(FILE *file, const struct pkg *pkg, int page)
 		f = fx < fy ? fx : fy;
 	}
 	fprintf(file, "%d %d translate\n", (int) (-cx*f), (int) (-cy*f));
-	ps_draw_package(file, pkg, f);
+	ps_draw_package(file, pkg, f, 0);
 	fprintf(file, "showpage\n");
 }
 
