@@ -1,8 +1,8 @@
 /*
  * postscript.c - Dump objects in Postscript
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1090,7 +1090,7 @@ static int ps_for_all_pkg(FILE *file,
     const char *one)
 {
 	struct pkg *pkg;
-	int pages;
+	int pages = 0;
 
 	for (pkg = pkgs; pkg; pkg = pkg->next)
 		if (pkg->name)
