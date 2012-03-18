@@ -1,8 +1,8 @@
 /*
  * meas.c - Measurements
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -294,6 +294,22 @@ static int instantiate_meas_pkg(int n_frames)
 }
 
 
+static void purge_meas(struct pkg *pkg)
+{
+	struct inst **anchor, *inst;
+
+	anchor = pkg->insts+ip_meas;
+	while (*anchor)
+		if ((*anchor)->u.meas.valid) {
+			anchor = &(*anchor)->next;
+		} else {
+			inst = *anchor;
+			*anchor = inst->next;
+			free(inst);
+		}
+}
+
+
 int instantiate_meas(int n_frames)
 {
 	struct pkg *pkg;
@@ -304,6 +320,7 @@ int instantiate_meas(int n_frames)
 			inst_select_pkg(pkg->name);
 			if (!instantiate_meas_pkg(n_frames))
 				return 0;
+			purge_meas(pkg);
 		}
 	return 1;
 }

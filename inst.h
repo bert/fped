@@ -1,8 +1,8 @@
 /*
  * inst.h - Instance structures
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -113,6 +113,7 @@ struct inst {
 		struct {
 			struct coord end;
 			double offset;
+			int valid;	/* only set if references exist */
 		} meas;
 	} u;
 	struct inst *next;

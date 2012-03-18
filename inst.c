@@ -1,8 +1,8 @@
 /*
  * inst.c - Instance structures
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1051,6 +1051,7 @@ int inst_meas(struct obj *obj, struct coord from, struct coord to)
 	assert(inst);
 	inst->base = from;
 	inst->u.meas.end = to;
+	inst->u.meas.valid = 1;
 	/* @@@ we still need to consider the text size as well */
 	update_bbox(&inst->bbox, from);
 	update_bbox(&inst->bbox, to);
@@ -1073,6 +1074,7 @@ void inst_meas_hint(struct obj *obj, unit_type offset)
 	inst = add_inst(&meas_ops, ip_meas, zero);
 	inst->obj = obj;
 	inst->u.meas.offset = offset;
+	inst->u.meas.valid = 0;
 	inst->active = 1; /* measurements are always active */
 }
 
