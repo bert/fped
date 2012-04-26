@@ -2,8 +2,8 @@
 /*
  * fpd.l - FootPrint Definition language
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +24,7 @@
 #include "y.tab.h"
 
 
-int start_token = START_FPD;
-
+static int start_token = START_FPD;
 static int disable_keywords = 0;
 static int is_table = 0;
 
