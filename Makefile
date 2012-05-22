@@ -1,8 +1,8 @@
 #
 # Makefile - Makefile of fped, the footprint editor
 #
-# Written 2009-2011 by Werner Almesberger
-# Copyright 2009-2011 by Werner Almesberger
+# Written 2009-2012 by Werner Almesberger
+# Copyright 2009-2012 by Werner Almesberger
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,6 +49,12 @@ YYFLAGS = -v
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell [ -z "`git status -s -uno`" ] || echo +)
 
+MKDEP = $(DEPEND) $(1).c | \
+	sed -e \
+	'/^\(.*:\)\? */{p;s///;s/ *\\\?$$/ /;s/  */:\n/g;H;}' \
+	  -e '$${g;p;}' -e d >$(1).d; \
+	[ "$${PIPESTATUS[*]}" = "0 0" ] || { rm -f $(1).d; exit 1; }
+
 
 # ----- Verbosity control -----------------------------------------------------
 
@@ -92,11 +98,7 @@ endif
 
 %.o:		%.c
 		$(CC) -c $(CFLAGS) $*.c -o $*.o
-		$(DEPEND) $*.c | \
-		  sed -e \
-		    '/^\(.*:\)\? */{p;s///;s/ *\\\?$$/ /;s/  */:\n/g;H;}' \
-		    -e '$${g;p;}' -e d >$*.d; \
-		  [ "$${PIPESTATUS[*]}" = "0 0" ] || { rm -f $*.d; exit 1; }
+		$(call MKDEP, $*)
 
 # generate 26x26 pixels icons, then drop the 1-pixel frame
 
@@ -123,12 +125,14 @@ lex.yy.c:	fpd.l y.tab.h
 
 lex.yy.o:	lex.yy.c y.tab.h
 		$(CC) -c $(CFLAGS) $(SLOPPY) lex.yy.c
+		$(call MKDEP, lex.yy)
 
 y.tab.c y.tab.h: fpd.y
 		$(YACC) $(YYFLAGS) -d fpd.y
 
 y.tab.o:	y.tab.c
 		$(CC) -c $(CFLAGS) $(SLOPPY) y.tab.c
+		$(call MKDEP, y.tab)
 
 gui_tool.o gui.o: $(XPMS:%=icons/%)
 
