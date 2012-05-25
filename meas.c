@@ -317,7 +317,7 @@ int instantiate_meas(int n_frames)
 	frame_instantiating = pkgs->insts[ip_frame];
 	for (pkg = pkgs; pkg; pkg = pkg->next)
 		if (pkg->name) {
-			inst_select_pkg(pkg->name);
+			inst_select_pkg(pkg->name, 0);
 			if (!instantiate_meas_pkg(n_frames))
 				return 0;
 			purge_meas(pkg);

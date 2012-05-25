@@ -322,11 +322,19 @@ static void do_build_frames(void)
 void change_world(void)
 {
 	struct bbox before, after;
+	int reachable_is_active;
 
 	inst_deselect();
 	status_begin_reporting();
 	before = inst_get_bbox();
+	reachable_is_active = reachable_pkg && reachable_pkg == active_pkg;
+	reachable_pkg = NULL;
 	instantiate();
+	if (reachable_is_active && reachable_pkg &&
+	     reachable_pkg != active_pkg) {
+		active_pkg = reachable_pkg;
+		instantiate();
+	}
 	after = inst_get_bbox();
 	label_in_box_bg(active_frame->label, COLOR_FRAME_SELECTED);
 	do_build_frames();

@@ -35,6 +35,7 @@
 struct inst *selected_inst = NULL;
 struct bbox active_frame_bbox;
 struct pkg *pkgs, *active_pkg, *curr_pkg;
+struct pkg *reachable_pkg = NULL;
 struct inst *frame_instantiating = NULL;
 
 static struct pkg *prev_pkgs;
@@ -1173,7 +1174,7 @@ void inst_end_frame(const struct frame *frame)
 /* ----- package ----------------------------------------------------------- */
 
 
-void inst_select_pkg(const char *name)
+void inst_select_pkg(const char *name, int active)
 {
 	struct pkg **pkg;
 	enum inst_prio prio;
@@ -1192,6 +1193,8 @@ void inst_select_pkg(const char *name)
 		(*pkg)->n_samples = n_samples;
 	}
 	curr_pkg = *pkg;
+	if (active && name)
+		reachable_pkg = curr_pkg;
 }
 
 
@@ -1246,7 +1249,7 @@ void inst_start(void)
 	active_frame_bbox = bbox_zero;
 	prev_pkgs = pkgs;
 	pkgs = NULL;
-	inst_select_pkg(NULL);
+	inst_select_pkg(NULL, 0);
 	curr_pkg = pkgs;
 	frame_instantiating = NULL;
 }

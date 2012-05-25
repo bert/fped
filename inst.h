@@ -134,6 +134,7 @@ extern struct inst *selected_inst;
 extern struct pkg *pkgs;	/* list of packages */
 extern struct pkg *active_pkg;	/* package selected in GUI */
 extern struct pkg *curr_pkg;	/* package currently being instantiated */
+extern struct pkg *reachable_pkg; /* package reachable with active vars */
 extern struct bbox active_frame_bbox;
 
 /*
@@ -195,7 +196,7 @@ void inst_begin_frame(struct obj *obj, struct frame *frame,
     struct coord base, int active, int is_active_frame);
 void inst_end_frame(const struct frame *frame);
 
-void inst_select_pkg(const char *name);
+void inst_select_pkg(const char *name, int active);
 
 struct bbox inst_get_bbox(void);
 
