@@ -1,8 +1,8 @@
 /*
  * expr.c - Expressions and values
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -443,9 +443,9 @@ char *expand(const char *name, const struct frame *frame)
 			while (is_id_char(*s, s == s0))
 				s++;
 			if (s == s0) {
-				if (*s)
+				if (*s) {
 					goto invalid;
-				else {
+				} else {
 					fail("incomplete variable name");
 					goto fail;
 				}
@@ -472,9 +472,9 @@ char *expand(const char *name, const struct frame *frame)
 		var_unique = unique(var);
 		free(var);
 		value_string = eval_string_var(frame, var_unique);
-		if (value_string)
+		if (value_string) {
 			value_len = strlen(value_string);
-		else {
+		} else {
 			value = eval_var(frame, var_unique);
 			if (is_undef(value)) {
 				fail("undefined variable \"%s\"", var_unique);

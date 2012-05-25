@@ -2,8 +2,8 @@
 /*
  * fpd.y - FootPrint Definition language
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -252,9 +252,9 @@ static int dbg_delete(const char *frame_name, const char *name)
 	struct obj *obj;
 	struct frame *frame;
 
-	if (!frame_name)
+	if (!frame_name) {
 		frame = curr_frame;
-	else {
+	} else {
 		frame = find_frame(frame_name);
 		if (!frame) {
 			yyerrorf("unknown frame \"%s\"", frame_name);

@@ -1,8 +1,8 @@
 /*
  * dump.c - Dump objects in the native FPD format
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -488,9 +488,8 @@ char *print_vec(const struct vec *vec)
 	y = unparse(vec->y);
 	if (vec->name)
 		s = stralloc_printf("vec %s(%s, %s)", base, x, y);
-	else {
+	else
 		s = stralloc_printf("vec %s(%s, %s)", base, x, y);
-	}
 	free(x);
 	free(y);
 	return s;

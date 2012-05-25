@@ -1135,9 +1135,9 @@ static void ps_package_fullpage(FILE *file, const struct pkg *pkg, int page)
 	bbox = inst_get_bbox();
 	cx = (bbox.min.x+bbox.max.x)/2;
 	cy = (bbox.min.y+bbox.max.y)/2;
-	if (active_params.zoom)
+	if (active_params.zoom) {
 		f = active_params.zoom;
-	else {
+	} else {
 		fx = 2.0*PAGE_HALF_WIDTH/(bbox.max.x-bbox.min.x);
 		fy = 2.0*PAGE_HALF_HEIGHT/(bbox.max.y-bbox.min.y);
 		f = fx < fy ? fx : fy;

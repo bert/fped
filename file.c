@@ -1,8 +1,8 @@
 /*
  * file.c - File handling
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,9 +91,9 @@ void save_with_backup(const char *name, int (*fn)(FILE *file, const char *one),
 	/* save to temporary file */
 
 	slash = strrchr(s, '/');
-	if (!slash)
+	if (!slash) {
 		tmp = stralloc_printf("~%s", s);
-	else {
+	} else {
 		*slash = 0;
 		tmp = stralloc_printf("%s/~%s", s, slash+1);
 		*slash = '/';
@@ -148,9 +148,9 @@ void save_with_backup(const char *name, int (*fn)(FILE *file, const char *one),
 
 void save_fpd(void)
 {
-	if (save_file_name)
+	if (save_file_name) {
 		save_with_backup(save_file_name, dump, NULL);
-	else {
+	} else {
 		if (!dump(stdout, NULL))
 			perror("stdout");
 	}

@@ -509,9 +509,9 @@ static void rect_status(struct coord a, struct coord b, unit_type width,
 
 	status_set_xy(d);
 	tip = "Angle of diagonal";
-	if (!d.x && !d.y)
+	if (!d.x && !d.y) {
 		status_set_angle(tip, "a = 0 deg");
-	else {
+	} else {
 		status_set_angle(tip, "a = %3.1f deg", theta(a, b));
 	}
 	if (d.x < 0)
@@ -716,9 +716,9 @@ static void do_move_to_vec(struct inst *inst, struct inst *to, int i)
 	walk = &frame->vecs;
 	while (*walk != to_vec) {
 		v = *walk;
-		if (!v->mark)
+		if (!v->mark) {
 			walk = &v->next;
-		else {
+		} else {
 			*walk = v->next;
 			v->next = *anchor;
 			*anchor = v;

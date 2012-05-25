@@ -1,8 +1,8 @@
 /*
  * gui_frame.c - GUI, frame window
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -616,9 +616,9 @@ static void show_value(const struct expr *expr, const struct frame *frame)
 
 	status_set_type_x(NULL, "value =");
 	value_string = eval_str(expr, frame);
-	if (value_string)
+	if (value_string) {
 		status_set_x(NULL, "\"%s\"", value_string);
-	else {
+	} else {
 		value = eval_num(expr, frame);
 		if (is_undef(value))
 			status_set_x(NULL, "undefined");
@@ -1701,9 +1701,9 @@ static gboolean frame_release_event(GtkWidget *widget, GdkEventButton *event,
 	case 1:
 		if (is_dragging(frame))
 			return FALSE;
-		if (active_frame != frame)
+		if (active_frame != frame) {
 			select_frame(frame);
-		else {
+		} else {
 			if (active_frame->name) {
 				edit_nothing();
 				edit_frame(frame);
