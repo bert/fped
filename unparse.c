@@ -1,8 +1,8 @@
 /*
  * unparse.c - Dump an expression tree into a string
  *
- * Written 2009 by Werner Almesberger
- * Copyright 2009 by Werner Almesberger
+ * Written 2009, 2012 by Werner Almesberger
+ * Copyright 2009, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ static int precedence(op_type op)
 	if (op == op_minus)
 		return prec_unary;
 	if (op == op_num || op == op_string || op == op_var ||
-	    op == op_sin || op == op_cos || op == op_sqrt)
+	    op == op_sin || op == op_cos || op == op_sqrt || op == op_floor)
 		return prec_primary;
 	abort();
 }
@@ -125,6 +125,8 @@ static char *unparse_op(const struct expr *expr, enum prec prec)
 		return unparse_fn("cos", expr);
 	if (expr->op == op_sqrt)
 		return unparse_fn("sqrt", expr);
+	if (expr->op == op_floor)
+		return unparse_fn("floor", expr);
 	abort();
 }
 

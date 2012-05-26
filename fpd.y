@@ -48,7 +48,7 @@ static struct obj **next_obj;
 
 static int n_vars, n_values;
 
-static const char *id_sin, *id_cos, *id_sqrt;
+static const char *id_sin, *id_cos, *id_sqrt, *id_floor;
 
 static struct tsort *tsort;
 
@@ -491,6 +491,7 @@ all:
 			id_sin = unique("sin");
 			id_cos = unique("cos");
 			id_sqrt = unique("sqrt");
+			id_floor = unique("floor");
 		}
 	    fpd
 	| START_EXPR expr
@@ -1245,6 +1246,8 @@ primary_expr:
 				$$ = binary_op(op_cos, $3, NULL);
 			else if ($1 == id_sqrt)
 				$$ = binary_op(op_sqrt, $3, NULL);
+			else if ($1 == id_floor)
+				$$ = binary_op(op_floor, $3, NULL);
 			else {
 				yyerrorf("unknown function \"%s\"", $1);
 				YYABORT;

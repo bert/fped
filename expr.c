@@ -322,6 +322,17 @@ struct num op_minus(const struct expr *self, const struct frame *frame)
 }
 
 
+struct num op_floor(const struct expr *self, const struct frame *frame)
+{
+	struct num res;
+
+	res = eval_num(self->u.op.a, frame);
+	if (!is_undef(res))
+		res.n = floor(res.n);
+	return res;
+}
+
+
 #define	BINARY						\
 	struct num a, b, res;				\
 							\
@@ -533,7 +544,7 @@ static void vacate_op(struct expr *expr)
 		free(expr->u.str);
 		return;
 	}
-	if (expr->op == op_minus ||
+	if (expr->op == op_minus || expr->op == op_floor ||
 	    expr->op == op_sin || expr->op == op_cos || expr->op == op_sqrt) {
 		free_expr(expr->u.op.a);
 		return;
