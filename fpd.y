@@ -365,17 +365,17 @@ static int dbg_link_frame(const char *frame_name,
 }
 
 
-static int dbg_print(const struct expr *expr)
+int dbg_print(const struct expr *expr, const struct frame *frame)
 {
 	const char *s;
 	struct num num;
 
-	s = eval_str(expr, curr_frame);
+	s = eval_str(expr, frame);
 	if (s) {
 		printf("%s\n", s);
 		return 1;
 	}
-	num = eval_num(expr, curr_frame);
+	num = eval_num(expr, frame);
 	if (is_undef(num))
 		return 0;
 	printf("%lg%s\n", num.n, str_unit(num));
@@ -457,7 +457,8 @@ static int dbg_meas(const char *name)
 %token		TOK_PAD TOK_RPAD TOK_HOLE TOK_RECT TOK_LINE TOK_CIRC TOK_ARC
 %token		TOK_MEAS TOK_MEASX TOK_MEASY TOK_UNIT
 %token		TOK_NEXT TOK_NEXT_INVERTED TOK_MAX TOK_MAX_INVERTED
-%token		TOK_DBG_DEL TOK_DBG_MOVE TOK_DBG_FRAME TOK_DBG_PRINT
+%token		TOK_DBG_DEL TOK_DBG_MOVE TOK_DBG_FRAME
+%token		TOK_DBG_PRINT TOK_DBG_IPRINT
 %token		TOK_DBG_DUMP TOK_DBG_EXIT TOK_DBG_TSORT TOK_DBG_MEAS
 %token		TOK_ALLOW_OVERLAP TOK_ALLOW_TOUCH
 
@@ -666,7 +667,7 @@ debug_item:
 		}
 	| TOK_DBG_PRINT expr
 		{
-			if (!dbg_print($2))
+			if (!dbg_print($2, curr_frame))
 				YYABORT;
 		}
 	| TOK_DBG_MEAS ID
@@ -975,6 +976,12 @@ obj:
 			if (!$$->u.frame.ref->active_ref)
 				$$->u.frame.ref->active_ref = $$;
 			$$->u.frame.lineno = $<num>3.n;
+		}
+	| TOK_DBG_IPRINT expr
+		{
+			$$ = new_obj(ot_iprint);
+			$$->base = NULL;
+			$$->u.iprint.expr = $2;
 		}
 	;
 

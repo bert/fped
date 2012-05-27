@@ -25,6 +25,7 @@
 #include "overlap.h"
 #include "layer.h"
 #include "delete.h"
+#include "fpd.h"
 #include "obj.h"
 
 
@@ -315,6 +316,9 @@ static int generate_objs(struct frame *frame, struct coord base_pos,
 			if (is_undef(offset))
 				goto error;
 			inst_meas_hint(obj, offset.n);
+			break;
+		case ot_iprint:
+			dbg_print(obj->u.iprint.expr, frame);
 			break;
 		default:
 			abort();

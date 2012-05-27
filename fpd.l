@@ -136,6 +136,8 @@ SP	[\t ]*
 				  return TOK_DBG_FRAME; }
 <INITIAL>"%print"		{ BEGIN(NOKEYWORD);
 				  return TOK_DBG_PRINT; }
+<INITIAL>"%iprint"		{ BEGIN(NOKEYWORD);
+				  return TOK_DBG_IPRINT; }
 <INITIAL>"%meas"		{ BEGIN(NOKEYWORD);
 				  return TOK_DBG_MEAS; }
 <INITIAL>"%dump"		{ BEGIN(NOKEYWORD);

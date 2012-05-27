@@ -1,8 +1,8 @@
 /*
  * obj.h - Object definition model
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -186,6 +186,7 @@ enum obj_type {
 	ot_line,
 	ot_arc,
 	ot_meas,
+	ot_iprint,
 };
 
 struct frame_ref {
@@ -215,6 +216,10 @@ struct arc {
 	struct expr *width;
 };
 
+struct iprint {
+	struct expr *expr;
+};
+
 struct obj {
 	enum obj_type type;
 	const char *name; /* NULL if anonymous */
@@ -226,6 +231,7 @@ struct obj {
 		struct hole hole;
 		struct arc arc;
 		struct meas meas;
+		struct iprint iprint;
 	} u;
 	struct frame *frame;
 	struct vec *base;

@@ -684,6 +684,7 @@ most of which mimick the effect of GUI operations:
 %move <identifier> [<number>] <identifier>
 %frame <identifier> <qualified-base>
 %print <expression>
+%iprint <expression>
 %meas <identifier>
 %dump
 %exit
@@ -715,7 +716,15 @@ parent frame's origin can be references as "@".
 %dump writes the footprint definition in the fped language to standard
 output. %exit immediately exits fped, without invoking the GUI.
 
-%print evaluates the expression and prints the result to standard output.
+%print and %iprint evaluate the expression and print the result to
+standard output. The difference between them is that %print runs only
+once and without explicit instantiation, while %iprint is treated as
+a regular object and is executed as many times as instantiation
+demands.
+
+For example, after  loop x = 1, 3  we would obtain just 1 with %print
+while %iprint would display, 1, 2, and 3.
+
 %meas performs an instantiation and prints the value of the labeled
 measurement.
 
