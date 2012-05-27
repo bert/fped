@@ -503,6 +503,21 @@ table
 
 (x, y) assume the values (1, 2) and (3, 4).
 
+Tables can also be used to provide information that depends on
+other variables. The value of such a variable acts as a key, and a
+row is only selected if all the keys in that row match the
+respective variables. To mark a variable as being used as key, its
+name it prefixed with a question mark.
+
+Example:
+
+loop n = 1, 2, 3
+table
+    { ?n, name }
+    { 1, "one" }
+    { 2, "two" }
+    { 3, "three" }
+
 
 Expressions
 -----------

@@ -60,6 +60,10 @@ struct var {
 	struct frame *frame;
 	struct table *table; /* NULL if loop */
 
+
+	/* key: 0 if the variable is set, 1 if the variable is compared */
+	int key;
+
 	/* for the GUI */
 	GtkWidget *widget;
 

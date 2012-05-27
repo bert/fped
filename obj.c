@@ -350,6 +350,30 @@ static int generate_items(struct frame *frame, struct coord base, int active)
 }
 
 
+static int match_keys(struct frame *frame, struct coord base, int active)
+{
+	const struct table *table;
+	const struct var *var;
+	const struct value *value;
+	int res;
+
+	for (table = frame->tables; table; table = table->next) {
+		value = table->curr_row->values;
+		for (var = table->vars; var; var = var->next) {
+			if (var->key) {
+				res = var_eq(frame, var->name, value->expr);
+				if (!res)
+					return 1;
+				if (res < 0)
+					return 0;
+			}
+			value = value->next;
+		}
+	}
+	return generate_items(frame, base, active);
+}
+
+
 static int run_loops(struct frame *frame, struct loop *loop,
     struct coord base, int active)
 {
@@ -358,7 +382,7 @@ static int run_loops(struct frame *frame, struct loop *loop,
 	int found_before, ok;
 
 	if (!loop)
-		return generate_items(frame, base, active);
+		return match_keys(frame, base, active);
 	from = eval_num(loop->from.expr, frame);
 	if (is_undef(from)) {
 		fail_expr(loop->from.expr);

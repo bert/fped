@@ -220,7 +220,8 @@ static void dump_var(FILE *file, const struct table *table,
 	char *s;
 
 	s = unparse(table->rows->values->expr);
-	fprintf(file, "%sset %s = %s\n\n", indent, table->vars->name, s);
+	fprintf(file, "%sset %s%s = %s\n\n", indent,
+	    table->vars->key ? "?" : "", table->vars->name, s);
 	free(s);
 }
 
@@ -240,8 +241,8 @@ static void dump_table(FILE *file, const struct table *table,
 	}
 	fprintf(file, "%stable\n%s    {", indent, indent);
 	for (var = table->vars; var; var = var->next)
-		fprintf(file, "%s %s", var == table->vars ? "" : ",",
-		    var->name);
+		fprintf(file, "%s %s%s", var == table->vars ? "" : ",",
+		    var->key ? "?" : "", var->name);
 	fprintf(file, " }\n");
 	for (row = table->rows; row; row = row->next) {
 		fprintf(file, "%s    {", indent);

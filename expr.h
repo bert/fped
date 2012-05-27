@@ -126,6 +126,9 @@ struct num op_div(const struct expr *self, const struct frame *frame);
 struct expr *new_op(op_type op);
 struct expr *binary_op(op_type op, struct expr *a, struct expr *b);
 
+int var_eq(const struct frame *frame, const char *name,
+    const struct expr *expr);
+
 struct num eval_var(const struct frame *frame, const char *name);
 
 /*

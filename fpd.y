@@ -107,7 +107,7 @@ static struct var *find_var(const struct frame *frame, const char *name)
 
 	for (table = frame->tables; table; table = table->next)
 		for (var = table->vars; var; var = var->next)
-			if (var->name == name)
+			if (!var->key && var->name == name)
 				return var;
 	for (loop = frame->loops; loop; loop = loop->next)
 		if (loop->var.name == name)
@@ -130,7 +130,7 @@ static void set_frame(struct frame *frame)
 }
 
 
-static void make_var(const char *id, struct expr *expr)
+static void make_var(const char *id, int key, struct expr *expr)
 {
 	struct table *table;
 
@@ -139,6 +139,7 @@ static void make_var(const char *id, struct expr *expr)
 	table->vars->name = id;
 	table->vars->frame = curr_frame;
 	table->vars->table = table;
+	table->vars->key = key;
 	table->rows = zalloc_type(struct row);
 	table->rows->table = table;
 	table->rows->values = zalloc_type(struct value);
@@ -425,6 +426,7 @@ static int dbg_meas(const char *name)
 
 %union {
 	struct num num;
+	int flag;
 	char *str;
 	const char *id;
 	struct expr *expr;
@@ -474,6 +476,7 @@ static int dbg_meas(const char *name)
 %type	<obj>	object obj meas unlabeled_meas
 %type	<expr>	expr opt_expr add_expr mult_expr unary_expr primary_expr
 %type	<num>	opt_num
+%type	<flag>	opt_key
 %type	<frame>	frame_qualifier
 %type	<str>	opt_string
 %type	<pt>	pad_type
@@ -607,13 +610,13 @@ frame_items:
 
 frame_item:
 	table
-	| TOK_SET ID '=' expr
+	| TOK_SET opt_key ID '=' expr
 		{
-			if (find_var(curr_frame, $2)) {
-				yyerrorf("duplicate variable \"%s\"", $2);
+			if (!$2 && find_var(curr_frame, $3)) {
+				yyerrorf("duplicate variable \"%s\"", $3);
 				YYABORT;
 			}
-			make_var($2, $4);
+			make_var($3, $2, $5);
 		}
 	| TOK_LOOP ID '=' expr ',' expr
 		{
@@ -755,22 +758,32 @@ vars:
 	;
 
 var:
-	ID
+	opt_key ID
 		{
-			if (find_var(curr_frame, $1)) {
-				yyerrorf("duplicate variable \"%s\"", $1);
+			if (!$1 && find_var(curr_frame, $2)) {
+				yyerrorf("duplicate variable \"%s\"", $2);
 				YYABORT;
 			}
 			$$ = zalloc_type(struct var);
-			$$->name = $1;
+			$$->name = $2;
 			$$->frame = curr_frame;
 			$$->table = curr_table;
+			$$->key = $1;
 			$$->next = NULL;
 			n_vars++;
 		}
 	;
 	
-	
+opt_key:
+		{
+			$$ = 0;
+		}
+	| '?'
+		{
+			$$ = 1;
+		}
+	;
+
 rows:
 		{
 			$$ = NULL;
