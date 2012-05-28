@@ -86,7 +86,7 @@ int is_dragging_anything(void)
 		NDX_n++;					\
 	   NDX_n; })
 
-#define	NTH(first, n) 						\
+#define	NTH(first, n)						\
 	({ typeof(first) *NTH_walk;				\
 	   int NTH_n = (n);					\
 	   for (NTH_walk = &(first); NTH_n; NTH_n--)		\
@@ -164,11 +164,11 @@ static void swap_table_cells_by_coord(GtkWidget *table_a,
 	b = pick_table_cell(table_b, b_col, b_row);
 	if (a) {
 		g_object_ref(a);
-        	gtk_container_remove(GTK_CONTAINER(table_a), a);
+		gtk_container_remove(GTK_CONTAINER(table_a), a);
 	}
 	if (b) {
 		g_object_ref(b);
-        	gtk_container_remove(GTK_CONTAINER(table_b), b);
+		gtk_container_remove(GTK_CONTAINER(table_b), b);
 	}
 	if (a)
 	        gtk_table_attach_defaults(GTK_TABLE(table_b), a,

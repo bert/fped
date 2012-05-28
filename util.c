@@ -52,7 +52,7 @@ char *stralloc_printf(const char *fmt, ...)
 /* ----- identifier syntax check ------------------------------------------- */
 
 
-int is_id_char(char c, int first) 
+int is_id_char(char c, int first)
 {
 	if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_')
 		return 1;

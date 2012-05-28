@@ -330,7 +330,7 @@ static struct num sin_cos(const struct expr *self,
 	if (is_undef(res))
 		return undef;
 	if (!is_dimensionless(res)) {
-		fail("angle must be dimensionless");	
+		fail("angle must be dimensionless");
 		return undef;
 	}
 	res.n = fn(res.n/180.0*M_PI);
@@ -358,11 +358,11 @@ struct num op_sqrt(const struct expr *self, const struct frame *frame)
 	if (is_undef(res))
 		return undef;
 	if (res.exponent & 1) {
-		fail("exponent of sqrt argument must be a multiple of two");	
+		fail("exponent of sqrt argument must be a multiple of two");
 		return undef;
 	}
 	if (res.n < 0) {
-		fail("argument of sqrt must be positive");	
+		fail("argument of sqrt must be positive");
 		return undef;
 	}
 	res.n = sqrt(res.n);

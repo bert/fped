@@ -88,7 +88,6 @@ static char *unparse_op(const struct expr *expr, enum prec prec)
 	char tmp[100];
 	char *buf, *temp;
 
-	
 	if (prec > precedence(expr->op)) {
 		temp = unparse_op(expr, prec_add);
 		buf = alloc_size(strlen(temp)+3);

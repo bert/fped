@@ -283,7 +283,7 @@ static int __inst_select(struct coord pos, int tries)
 				best_dist = dist;
 			}
 		}
-	
+
 		if (selected_inst)
 			goto selected;
 	}

@@ -208,7 +208,7 @@ static void pop_up_frame(struct frame *frame, GdkEventButton *event)
 	    can_add_frame());
 
 	enable_add_var(frame, factory_frame);
-	
+
 	pop_up(popup_frame_widget, event, frame);
 }
 
@@ -1038,7 +1038,7 @@ static void build_table(GtkWidget *vbox, struct frame *frame,
 			gtk_table_set_row_spacings(GTK_TABLE(tab), 1);
 			gtk_table_set_col_spacings(GTK_TABLE(tab), 1);
 		}
-	
+
 		name = stralloc_printf("%s%s", var->key ? "?" : "", var->name);
 		field = label_in_box_new(name,
 		    "Variable (column) name. Click to edit.");
@@ -1122,7 +1122,6 @@ static void build_table(GtkWidget *vbox, struct frame *frame,
 		n_var++;
 		n_vars++;
 	}
-	
 }
 
 

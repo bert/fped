@@ -192,7 +192,7 @@ SP	[\t ]*
 
 ^#\ [0-9]+\ \"[^"]*\"(\ [0-9]+)*\n {
 				  if (!disable_keywords)
-				  	BEGIN(INITIAL);
+					BEGIN(INITIAL);
 				  lineno = strtol(yytext+2, NULL, 0); }
 
 .				return *yytext;

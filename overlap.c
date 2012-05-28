@@ -40,7 +40,7 @@ int inside(const struct inst *a, const struct inst *b)
 		abort();
 	}
 	sort_coord(&min_a, &max_a);
-	
+
 	min_b = b->base;
 	switch (b->obj->type) {
 	case ot_pad:

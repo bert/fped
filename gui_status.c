@@ -431,7 +431,7 @@ static struct edit_ops edit_ops_unique = {
 };
 
 
-void edit_unique(const char **s, int (*validate)(const char *s, void *ctx), 
+void edit_unique(const char **s, int (*validate)(const char *s, void *ctx),
     void *ctx, const char *tooltip)
 {
 	static struct edit_unique_ctx unique_ctx;
@@ -1055,7 +1055,7 @@ void make_status_area(GtkWidget *vbox)
 	status_entry_y = add_entry(tab, 2, 1);
 
 	status_entry_x = gtk_widget_ref(make_entry());
-	
+
 	/* name and input */
 
 	status_name = add_label(tab, 1, 2);

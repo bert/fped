@@ -223,7 +223,7 @@ GtkWidget *tool_button(GtkWidget *bar, GdkDrawable *drawable,
     gboolean (*cb)(GtkWidget *widget, GdkEventButton *event, gpointer data),
     gpointer data)
 {
-	GtkWidget *image, *evbox;	
+	GtkWidget *image, *evbox;
 	GtkToolItem *item;
 
 	/*

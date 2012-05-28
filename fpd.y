@@ -773,7 +773,7 @@ var:
 			n_vars++;
 		}
 	;
-	
+
 opt_key:
 		{
 			$$ = 0;
@@ -973,8 +973,8 @@ obj:
 			$$->u.arc.end = $4;
 			$$->u.arc.width = $5;
 		}
-	| TOK_FRAME ID 
-		{ 
+	| TOK_FRAME ID
+		{
 		    $<num>$.n = lineno;
 		}
 		    base

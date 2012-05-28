@@ -59,7 +59,7 @@ struct inst_ops {
 	void (*save)(FILE *file, struct inst *self);
 	void (*draw)(struct inst *self);
 	struct pix_buf *(*hover)(struct inst *self);
-	unit_type (*distance)(struct inst *self, struct coord pos, 
+	unit_type (*distance)(struct inst *self, struct coord pos,
 	    unit_type scale);
 	void (*select)(struct inst *self);
 	void (*begin_drag_move)(struct inst *from, int i);
@@ -207,7 +207,7 @@ void inst_revert(void);
 void inst_draw(void);
 void inst_highlight_vecs(int (*pick)(struct inst *inst, void *user),
      void *user);
-struct inst *inst_find_vec(struct coord pos, 
+struct inst *inst_find_vec(struct coord pos,
     int (*pick)(struct inst *inst, void *user), void *user);
 struct inst *insts_ip_vec(void);
 

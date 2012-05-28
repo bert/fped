@@ -561,7 +561,7 @@ char *format_len(const char *label, unit_type len, enum curr_unit unit)
 		abort();
 	}
 	return stralloc_printf(mm ?
-	    "%s" MM_FORMAT_SHORT "%s" : 
+	    "%s" MM_FORMAT_SHORT "%s" :
 	    "%s" MIL_FORMAT_SHORT "%s",
 	    label, n, u);
 }

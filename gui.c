@@ -94,7 +94,7 @@ static void swap_var_code(void)
 
 
 static GtkItemFactoryEntry menu_entries[] = {
-	{ "/File",		NULL,	NULL,	 	0, "<Branch>" },
+	{ "/File",		NULL,	NULL,		0, "<Branch>" },
 	{ "/File/Save",		NULL,	save_fpd,	0, "<Item>" },
 	{ "/File/Save as",	NULL,	save_as_fpd,	0, "<Item>" },
         { "/File/sep1",		NULL,	NULL,		0, "<Separator>" },
@@ -277,7 +277,7 @@ static void make_center_area(GtkWidget *vbox)
 
 	paned = gtk_hpaned_new();
 	gtk_box_pack_start(GTK_BOX(hbox), paned, TRUE, TRUE, 0);
-	
+
 	/* Frames */
 
 	frames_area = gtk_scrolled_window_new(NULL, NULL);
@@ -338,7 +338,7 @@ void change_world(void)
 	after = inst_get_bbox();
 	label_in_box_bg(active_frame->label, COLOR_FRAME_SELECTED);
 	do_build_frames();
-	if (after.min.x < before.min.x || after.min.y < before.min.y || 
+	if (after.min.x < before.min.x || after.min.y < before.min.y ||
 	    after.max.x > before.max.x || after.max.y > before.max.y)
 		zoom_to_extents();
 	else

@@ -654,7 +654,7 @@ static int generate_frames(FILE *file, const struct pkg *pkg,
 	 * quantitative one, emphasizing the logical structure of the drawing
 	 * and not the actual sizes.
 	 *
- 	 * This could be done by ranking vectors by current, average, maximum,
+	 * This could be done by ranking vectors by current, average, maximum,
 	 * etc. size, then let their size be determined by the amount of text
 	 * that's needed and the size of subordinate vectors. One difficulty
 	 * would be in making vectors with a fixed length ratio look correct,

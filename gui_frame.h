@@ -22,7 +22,7 @@
 extern int show_vars;
 
 
-int find_var_in_frame(const struct frame *frame, const char *name, 
+int find_var_in_frame(const struct frame *frame, const char *name,
     const struct var *self);
 void reselect_var(struct var *var);
 
