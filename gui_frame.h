@@ -1,8 +1,8 @@
 /*
  * gui_frame.h - GUI, frame window
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,9 +16,15 @@
 
 #include <gtk/gtk.h>
 
+#include "obj.h"
+
 
 extern int show_vars;
 
+
+int find_var_in_frame(const struct frame *frame, const char *name, 
+    const struct var *self);
+void reselect_var(struct var *var);
 
 void make_popups(void);
 

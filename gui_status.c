@@ -1,8 +1,8 @@
 /*
  * gui_status.c - GUI, status area
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include "gui_util.h"
 #include "gui_style.h"
 #include "gui_canvas.h"
+#include "gui_frame.h"
 #include "gui.h"
 #include "gui_status.h"
 
@@ -183,6 +184,59 @@ static void entry_color(GtkWidget *widget, const char *color)
 
 	col = get_color(color);
 	gtk_widget_modify_base(widget, GTK_STATE_NORMAL, &col);
+}
+
+
+/* ----- variable type display and change ---------------------------------- */
+
+
+static struct var *curr_var;
+static GtkWidget *var_type;
+
+
+static void show_var_type(void)
+{
+	gtk_label_set_text(GTK_LABEL(var_type),
+	    curr_var->key ? "key" : "assign");
+}
+
+
+static gboolean var_type_button_press_event(GtkWidget *widget,
+    GdkEventButton *event, gpointer data)
+{
+	switch (event->button) {
+	case 1:
+		if (curr_var->key &&
+		    find_var_in_frame(curr_var->frame, curr_var->name,
+		    curr_var))
+			return TRUE;
+		curr_var->key = !curr_var->key;
+		show_var_type();
+		break;
+	}
+	/*
+	 * We can't just redraw() here, because changing the variable type may
+	 * also affect lots of other things. So we change the world and hope
+	 * we end up selecting the same variable afterwards.
+	 */
+	change_world();
+	reselect_var(curr_var);
+	return TRUE;
+}
+
+
+void edit_var_type(struct var *var)
+{
+	vacate_widget(status_box_x);
+	curr_var = var;
+	var_type = label_in_box_new(NULL, "Variable type. Click to cycle.");
+	gtk_container_add(GTK_CONTAINER(status_box_x), box_of_label(var_type));
+	label_in_box_bg(var_type, COLOR_SELECTOR);
+	g_signal_connect(G_OBJECT(box_of_label(var_type)),
+	    "button_press_event", G_CALLBACK(var_type_button_press_event),
+	    NULL);
+	show_var_type();
+	gtk_widget_show_all(status_box_x);
 }
 
 

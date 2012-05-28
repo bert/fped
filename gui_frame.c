@@ -572,7 +572,7 @@ static void add_sep(GtkWidget *box, int size)
 /* ----- variable name editor ---------------------------------------------- */
 
 
-static int find_var_in_frame(const struct frame *frame, const char *name,
+int find_var_in_frame(const struct frame *frame, const char *name,
     const struct var *self)
 {
 	const struct table *table;
@@ -581,7 +581,8 @@ static int find_var_in_frame(const struct frame *frame, const char *name,
 
 	for (table = frame->tables; table; table = table->next)
 		for (var = table->vars; var; var = var->next)
-			if (var != self && !strcmp(var->name, name))
+			if (var != self && !var->key &&
+			    !strcmp(var->name, name))
 				return 1;
 	for (loop = frame->loops; loop; loop = loop->next)
 		if (&loop->var != self && !strcmp(loop->var.name, name))
@@ -596,6 +597,8 @@ static int validate_var_name(const char *s, void *ctx)
 
 	if (!is_id(s))
 		return 0;
+	if (var->key)
+		return 1;
 	return !find_var_in_frame(var->frame, s, var);
 }
 
@@ -651,10 +654,22 @@ static void edit_var(struct var *var,
 	status_set_name("Variable name", "%s", var->name);
 	show_var_value(var, var->frame);
 	edit_nothing();
+	edit_var_type(var);
 	edit_unique_with_values(&var->name, validate_var_name, var,
 	    set_values, user, max_values,
 	    "Variable name. "
 	    "Shortcut:<b><i>name</i>=<i>value</i>,<i>...</i> </b>");
+}
+
+
+static void set_col_values(void *user, const struct value *values,
+    int n_values);
+
+
+void reselect_var(struct var *var)
+{
+
+	edit_var(var, set_col_values, var, -1);
 }
 
 

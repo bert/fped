@@ -1,8 +1,8 @@
 /*
  * gui_status.h - GUI, status area
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include "coord.h"
 #include "expr.h"
+#include "obj.h"
 
 
 enum curr_unit {
@@ -31,6 +32,7 @@ enum curr_unit {
 extern enum curr_unit curr_unit;
 
 
+void edit_var_type(struct var *var);
 void edit_pad_type(enum pad_type *type);
 
 void edit_unique(const char **s, int (*validate)(const char *s, void *ctx),
