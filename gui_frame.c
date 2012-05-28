@@ -572,7 +572,7 @@ static void add_sep(GtkWidget *box, int size)
 /* ----- variable name editor ---------------------------------------------- */
 
 
-int find_var_in_frame(const struct frame *frame, const char *name,
+static int find_var_in_frame(const struct frame *frame, const char *name,
     const struct var *self)
 {
 	const struct table *table;
@@ -668,7 +668,6 @@ static void set_col_values(void *user, const struct value *values,
 
 void reselect_var(struct var *var)
 {
-
 	edit_var(var, set_col_values, var, -1);
 }
 
