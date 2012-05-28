@@ -220,7 +220,6 @@ static GtkItemFactory *factory_single_var;
 static GtkWidget *popup_single_var_widget;
 
 
-
 static void add_row_here(struct table *table, struct row **anchor)
 {
 	struct row *row;
@@ -801,7 +800,7 @@ static void build_assignment(GtkWidget *vbox, struct frame *frame,
     struct table *table)
 {
 	GtkWidget *hbox, *field;
-	char *expr;
+	char *name, *expr;
 
 	if (!table->vars || table->vars->next)
 		return;
@@ -811,8 +810,11 @@ static void build_assignment(GtkWidget *vbox, struct frame *frame,
 	hbox = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
-	field = label_in_box_new(table->vars->name,
-	    "Variable name. Click to edit.");
+	name = stralloc_printf("%s%s", table->vars->key ? "?" : "",
+	    table->vars->name);
+	field = label_in_box_new(name, "Variable name. Click to edit.");
+	free(name);
+
 	gtk_box_pack_start(GTK_BOX(hbox), box_of_label(field), FALSE, FALSE, 0);
 	label_in_box_bg(field, COLOR_VAR_PASSIVE);
 	table->vars->widget = field;
@@ -988,7 +990,7 @@ static void build_table(GtkWidget *vbox, struct frame *frame,
 	struct value *value;
 	int n_vars = 0, n_rows = 0;
 	int n_var, n_row, pos;
-	char *expr;
+	char *name, *expr;
 	GdkColor color;
 
 	for (var = table->vars; var; var = var->next)
@@ -1022,8 +1024,11 @@ static void build_table(GtkWidget *vbox, struct frame *frame,
 			gtk_table_set_col_spacings(GTK_TABLE(tab), 1);
 		}
 	
-		field = label_in_box_new(var->name,
+		name = stralloc_printf("%s%s", var->key ? "?" : "", var->name);
+		field = label_in_box_new(name,
 		    "Variable (column) name. Click to edit.");
+		free(name);
+
 		gtk_table_attach_defaults(GTK_TABLE(tab), box_of_label(field),
 		    n_vars, n_vars+1, 0, 1);
 		label_in_box_bg(field, COLOR_VAR_PASSIVE);
