@@ -38,7 +38,7 @@ struct pkg *pkgs, *active_pkg, *curr_pkg;
 struct pkg *reachable_pkg = NULL;
 struct inst *frame_instantiating = NULL;
 
-static struct pkg *prev_pkgs;
+static struct pkg *prev_pkgs, *prev_reachable_pkg;
 
 static unsigned long active_set = 0;
 
@@ -1248,7 +1248,9 @@ void inst_start(void)
 
 	active_frame_bbox = bbox_zero;
 	prev_pkgs = pkgs;
+	prev_reachable_pkg = reachable_pkg;
 	pkgs = NULL;
+	reachable_pkg = NULL;
 	inst_select_pkg(NULL, 0);
 	curr_pkg = pkgs;
 	frame_instantiating = NULL;
@@ -1274,6 +1276,7 @@ void inst_revert(void)
 {
 	free_pkgs(pkgs);
 	pkgs = prev_pkgs;
+	reachable_pkg = prev_reachable_pkg;
 }
 
 

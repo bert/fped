@@ -328,7 +328,6 @@ void change_world(void)
 	status_begin_reporting();
 	before = inst_get_bbox();
 	reachable_is_active = reachable_pkg && reachable_pkg == active_pkg;
-	reachable_pkg = NULL;
 	instantiate();
 	if (reachable_is_active && reachable_pkg &&
 	     reachable_pkg != active_pkg) {
