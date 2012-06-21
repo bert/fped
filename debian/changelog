@@ -1,6 +1,6 @@
-fped (0.0+201205-1) lucid; urgency=low
+fped (0.0+201206-1) lucid; urgency=low
 
-  * New snapshot, taken from commit 59b90b3
+  * New snapshot, taken from commit e6fa108
   * Switched to new project host: http://projects.qi-hardware.com/p/fped
   * debian/rules:
     - rewrite as a minimal rules file using dh
