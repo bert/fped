@@ -1,7 +1,7 @@
 Source: fped
 Section: electronics
 Priority: extra
-Maintainer: Xiangfu Liu <xiangfu@sharism.cc>
+Maintainer: Xiangfu Liu <xiangfu.z@gmail.com>
 Build-Depends: debhelper (>=  7.4.10), pkg-config, 
 	bash (>= 4), flex, bison, 
 	imagemagick, transfig, netpbm, ghostscript,
