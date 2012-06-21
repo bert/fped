@@ -6,7 +6,7 @@ Build-Depends: debhelper (>=  7.4.10), pkg-config,
 	bash (>= 4), flex, bison, 
 	imagemagick, transfig, netpbm, ghostscript,
 	libgtk2.0-dev 
-Standards-Version: 3.9.1
+Standards-Version: 3.9.3
 Homepage: http://downloads.qi-hardware.com/people/werner/fped/gui.html
 
 Package: fped

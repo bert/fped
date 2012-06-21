@@ -1,19 +1,30 @@
 #!/bin/sh
 # Build a tarball from the latest upstream version, with a nice
 # version number.
+#
+# Requires git 1.6.6 or later, GNU date, and gzip.
 
 set -e
 
+: ${REPO=$(git rev-parse --git-dir)}
+: ${BRANCH=remotes/origin/master}
+
+mkdir debian-orig-source
+trap 'rm -fr debian-orig-source || exit 1' EXIT
+
+git init -q debian-orig-source
+GIT_DIR=$(pwd)/debian-orig-source/.git
+export GIT_DIR
+
+# Fetch latest upstream version.
+git fetch -q "$REPO" "$BRANCH"
+
 # Determine version number.
 release=0.0
-upstream_version="${release}+r${REV}"
-
-TOPFOLDER=fped-$upstream_version.orig
-
-trap 'rm -fr ${TOPFOLDER} || exit 1' EXIT INT TERM
-
-svn export -r${REV} http://svn.openmoko.org/trunk/eda/fped ${TOPFOLDER}
+date=$(date --utc --date="$(git log -1 --pretty=format:%cD FETCH_HEAD)" "+%Y%m")
+upstream_version="${release}+${date}"
 
 # Generate tarball.
-echo "packaging ..."
-tar -czf fped_$upstream_version.orig.tar.gz ${TOPFOLDER}
+echo "packaging $(git rev-parse --short FETCH_HEAD)"
+git archive FETCH_HEAD |
+	gzip -n -9 >"fped_$upstream_version.orig.tar.gz"
