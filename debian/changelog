@@ -1,4 +1,4 @@
-fped (0.0+201206-1) lucid; urgency=low
+fped (0.0+201206-1) unstable; urgency=low
 
   * New snapshot, taken from commit e6fa108
   * Switched to new project host: http://projects.qi-hardware.com/p/fped
@@ -9,28 +9,28 @@ fped (0.0+201206-1) lucid; urgency=low
 
  -- Xiangfu Liu <xiangfu.z@gmail.com>  Thu, 21 Jun 2012 16:58:21 +0800
 
-fped (0.0+r6006-1) lucid; urgency=low
+fped (0.0+r6006-1) unstable; urgency=low
 
   * New snapshot, taken from commit 78e4ba0
   * update to r6006
 
  -- Xiangfu Liu <xiangfu.z@gmail.com>  Fri, 25 Mar 2011 08:43:21 +0800
 
-fped (0.0+r6005-1) lucid; urgency=low
+fped (0.0+r6005-1) unstable; urgency=low
 
   * New snapshot, taken from commit 335ddb6
   * update to r6005
 
  -- Xiangfu Liu <xiangfu.z@gmail.com>  Wed, 23 Mar 2011 16:28:26 +0800
 
-fped (0.0+r5999-1) lucid; urgency=low
+fped (0.0+r5999-1) unstable; urgency=low
 
   * New snapshot, taken from commit 1409cfa
   * update to r5999
 
  -- Xiangfu Liu <xiangfu.z@gmail.com>  Tue, 22 Mar 2011 15:12:02 +0800
 
-fped (0.0+r5997-1) lucid; urgency=low
+fped (0.0+r5997-1) unstable; urgency=low
 
   * New snapshot, taken from commit ceaa519
   * Fix "FTBFS: tsort: cycle: ./Common: line 37:  2851 Aborted"
