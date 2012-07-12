@@ -16,6 +16,7 @@
 #include <math.h>
 
 #include "util.h"
+#include "error.h"
 #include "coord.h"
 #include "expr.h"
 #include "layer.h"
@@ -592,6 +593,25 @@ static void grow_bbox_by_width(struct bbox *bbox, unit_type width)
 }
 
 
+static int zero_sized(struct coord a, struct coord b, const char *fmt,
+    const char *arg)
+{
+	if (a.x == b.x && a.y == b.y) {
+		fail(fmt, "zero-sized", arg);
+		return 1;
+	}
+	if (a.x == b.x) {
+		fail(fmt, "zero-width", arg);
+		return 1;
+	}
+	if (a.y == b.y) {
+		fail(fmt, "zero-height", arg);
+		return 1;
+	}
+	return 0;
+}
+
+
 static struct inst *add_inst(const struct inst_ops *ops, enum inst_prio prio,
     struct coord base)
 {
@@ -896,6 +916,8 @@ int inst_pad(struct obj *obj, const char *name, struct coord a, struct coord b)
 {
 	struct inst *inst;
 
+	if (zero_sized(a, b, "%s pad \"%s\"", name))
+		return 0;
 	inst = add_inst(obj->u.pad.rounded ? &rpad_ops : &pad_ops,
 	    obj->u.pad.type == pt_normal || obj->u.pad.type == pt_bare ||
 	    obj->u.pad.type == pt_trace ?
@@ -932,6 +954,8 @@ int inst_hole(struct obj *obj, struct coord a, struct coord b)
 {
 	struct inst *inst;
 
+	if (zero_sized(a, b, "%s hole", NULL))
+		return 0;
 	inst = add_inst(&hole_ops, ip_hole, a);
 	inst->obj = obj;
 	inst->u.hole.other = b;
