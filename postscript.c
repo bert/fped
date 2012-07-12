@@ -93,6 +93,8 @@
 
 struct postscript_params postscript_params = {
 	.zoom		= 0,
+	.max_width	= 0,
+	.max_height	= 0,
 	.show_pad_names	= 1,
 	.show_stuff	= 0,
 	.label_vecs	= 0,
@@ -1129,6 +1131,7 @@ static void ps_package_fullpage(FILE *file, const struct pkg *pkg, int page)
 	unit_type cx, cy;
 	struct bbox bbox;
 	double fx, fy, f;
+	double d;
 
 	ps_page(file, page, pkg);
 	active_params = postscript_params;
@@ -1138,8 +1141,12 @@ static void ps_package_fullpage(FILE *file, const struct pkg *pkg, int page)
 	if (active_params.zoom) {
 		f = active_params.zoom;
 	} else {
-		fx = 2.0*PAGE_HALF_WIDTH/(bbox.max.x-bbox.min.x);
-		fy = 2.0*PAGE_HALF_HEIGHT/(bbox.max.y-bbox.min.y);
+		d = active_params.max_width ? active_params.max_width :
+		    2.0*PAGE_HALF_WIDTH;
+		fx = d/(bbox.max.x-bbox.min.x);
+		d = active_params.max_height ? active_params.max_height :
+		    2.0*PAGE_HALF_HEIGHT;
+		fy = d/(bbox.max.y-bbox.min.y);
 		f = fx < fy ? fx : fy;
 	}
 	fprintf(file, "%d %d translate\n", (int) (-cx*f), (int) (-cy*f));

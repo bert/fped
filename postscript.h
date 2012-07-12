@@ -1,8 +1,8 @@
 /*
  * postscript.h - Dump objects in Postscript
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,9 @@
 
 
 struct postscript_params {
-        double zoom;
+        double zoom;		/* 0 for auto-zoom */
+	double max_width;	/* in fped units; 0 for paper width */
+	double max_height;	/* in fped units; 0 for paper height */
         int show_pad_names;
         int show_stuff;         /* vecs and frames */
         int label_vecs;

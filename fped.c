@@ -1,8 +1,8 @@
 /*
  * fped.c - Footprint editor, main function
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,9 +80,35 @@ static void usage(const char *name)
 "Common options:\n"
 "  -1 name     output only the specified package\n"
 "  -s scale    scale factor for -P (default: auto-scale)\n"
+"  -s [width]x[heigth]\n"
+"              auto-scale to fit within specified box. Dimensions in mm.\n"
 "  cpp_option  -Idir, -Dname[=value], or -Uname\n"
     , name);
 	exit(1);
+}
+
+
+static int parse_scaling(const char *arg)
+{
+	const char *x;
+	char *end;
+
+	x = strchr(arg, 'x');
+	if (!x) {
+		postscript_params.zoom = strtod(arg, &end);
+		return !*end;
+	}
+	if (x != arg) {
+		postscript_params.max_width = mm_to_units(strtod(arg, &end));
+		if (*end != 'x')
+			return 0;
+	}
+	if (x[1]) {
+		postscript_params.max_height = mm_to_units(strtod(x+1, &end));
+		if (*end)
+			return 0;
+	}
+	return 1;
 }
 
 
@@ -101,7 +127,6 @@ int main(int argc, char **argv)
 	char *args[2];
 	int fake_argc;
 	char opt[] = "-?";
-	char *end;
 	int error;
 	int test_mode = 0;
 	const char *one = NULL;
@@ -135,8 +160,7 @@ int main(int argc, char **argv)
 		case 's':
 			if (batch != batch_ps_fullpage)
 				usage(*argv);
-			postscript_params.zoom = strtod(optarg, &end);
-			if (*end)
+			if (!parse_scaling(optarg))
 				usage(*argv);
 			break;
 		case 'T':
