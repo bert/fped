@@ -1,12 +1,12 @@
 This work was packaged for Debian by:
 
-    Xiangfu Liu <xiangfu@sharism.cc> on Mon, 4 Oct 2010 15:14:14 +0800
+    Xiangfu Liu <xiangfu.z@gmail.com> on Mon, 4 Oct 2010 15:14:14 +0800
 
 It was downloaded from:
 
-    http://svn.openmoko.org/trunk/eda/fped
+    http://projects.qi-hardware.com/p/fped/
 
-Upstream Author(s):
+Upstream Author:
 
     Werner Almesberger <werner@almesberger.net>
 
@@ -34,6 +34,6 @@ Public License version 2 can be found in `/usr/share/common-licenses/GPL-2'.
 
 The Debian packaging is:
 
-    Copyright (C) 2010 Xiangfu Liu <xiangfu@sharism.cc> and is licensed 
+    Copyright (C) 2010 Xiangfu Liu <xiangfu.z@gmail.com> and is licensed 
 under the GPL version 2, see above.
 
