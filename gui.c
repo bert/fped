@@ -1,8 +1,8 @@
 /*
  * gui.c - Editor GUI core
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -326,7 +326,7 @@ void change_world(void)
 
 	inst_deselect();
 	status_begin_reporting();
-	before = inst_get_bbox();
+	before = inst_get_bbox(NULL);
 	reachable_is_active = reachable_pkg && reachable_pkg == active_pkg;
 	instantiate();
 	if (reachable_is_active && reachable_pkg &&
@@ -334,7 +334,7 @@ void change_world(void)
 		active_pkg = reachable_pkg;
 		instantiate();
 	}
-	after = inst_get_bbox();
+	after = inst_get_bbox(NULL);
 	label_in_box_bg(active_frame->label, COLOR_FRAME_SELECTED);
 	do_build_frames();
 	if (after.min.x < before.min.x || after.min.y < before.min.y ||

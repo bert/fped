@@ -581,6 +581,14 @@ static void propagate_bbox(const struct inst *inst)
 
 	update_bbox(&frame->bbox, inst->bbox.min);
 	update_bbox(&frame->bbox, inst->bbox.max);
+
+	if (curr_pkg->bbox.min.x || curr_pkg->bbox.min.y ||
+	    curr_pkg->bbox.max.x || curr_pkg->bbox.max.y) {
+		update_bbox(&curr_pkg->bbox, inst->bbox.min);
+		update_bbox(&curr_pkg->bbox, inst->bbox.max);
+	} else {
+		curr_pkg->bbox = inst->bbox;
+	}
 }
 
 
@@ -1225,9 +1233,12 @@ void inst_select_pkg(const char *name, int active)
 /* ----- misc. ------------------------------------------------------------- */
 
 
-struct bbox inst_get_bbox(void)
+struct bbox inst_get_bbox(const struct pkg *pkg)
 {
-	return pkgs->insts[ip_frame]->bbox;
+	if (pkg)
+		return pkg->bbox;
+	else
+		return pkgs->insts[ip_frame]->bbox;
 }
 
 

@@ -809,7 +809,7 @@ static void ps_package(FILE *file, const struct pkg *pkg, int page)
 	x = 2*PAGE_HALF_WIDTH-2*PS_DIVIDER_BORDER;
 	y = PAGE_HALF_HEIGHT-PS_HEADER_HEIGHT-3*PS_DIVIDER_BORDER;
 
-	bbox = inst_get_bbox();
+	bbox = inst_get_bbox(pkg);
 	w = 2*(-bbox.min.x > bbox.max.x ? -bbox.min.x : bbox.max.x);
 	h = 2*(-bbox.min.y > bbox.max.y ? -bbox.min.y : bbox.max.y);
 
@@ -1132,7 +1132,7 @@ static void ps_package_fullpage(FILE *file, const struct pkg *pkg, int page)
 
 	ps_page(file, page, pkg);
 	active_params = postscript_params;
-	bbox = inst_get_bbox();
+	bbox = inst_get_bbox(pkg);
 	cx = (bbox.min.x+bbox.max.x)/2;
 	cy = (bbox.min.y+bbox.max.y)/2;
 	if (active_params.zoom) {

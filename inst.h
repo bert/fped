@@ -124,6 +124,7 @@ struct pkg {
 	const char *name;	/* NULL if global package */
 	struct inst *insts[ip_n];
 	struct inst **next_inst[ip_n];
+	struct bbox bbox;	/* bbox only of items in this package */
 	struct sample **samples;
 	int n_samples;
 	struct pkg *next;
@@ -198,7 +199,7 @@ void inst_end_frame(const struct frame *frame);
 
 void inst_select_pkg(const char *name, int active);
 
-struct bbox inst_get_bbox(void);
+struct bbox inst_get_bbox(const struct pkg *pkg);
 
 void inst_start(void);
 void inst_commit(void);
