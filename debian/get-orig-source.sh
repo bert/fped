@@ -20,7 +20,7 @@ export GIT_DIR
 git fetch -q "$REPO" "$BRANCH"
 
 # Determine version number.
-release=0.0
+release=0.1
 date=$(date --utc --date="$(git log -1 --pretty=format:%cD FETCH_HEAD)" "+%Y%m")
 upstream_version="${release}+${date}"
 
