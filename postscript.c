@@ -238,9 +238,9 @@ static void ps_pad_name(FILE *file, const struct inst *inst)
 }
 
 
-static const char *hatch(layer_type layers)
+static const char *hatch(enum pad_type type)
 {
-	switch (layers_to_pad_type(layers)) {
+	switch (type) {
 	case pt_normal:
 		return "crosspath";
 	case pt_bare:
@@ -260,7 +260,7 @@ static const char *hatch(layer_type layers)
 static void ps_pad(FILE *file, const struct inst *inst, int show_name)
 {
 	ps_filled_box(file, inst->base, inst->u.pad.other,
-	    hatch(inst->u.pad.layers));
+	    hatch(layers_to_pad_type(inst->u.pad.layers)));
 
 	if (show_name && !inst->u.pad.hole)
 		ps_pad_name(file, inst);
@@ -296,7 +296,7 @@ static void ps_rpad(FILE *file, const struct inst *inst, int show_name)
 	fprintf(file, "0 setgray %d setlinewidth\n", PS_HATCH_LINE);
 	ps_rounded_rect(file, inst->base, inst->u.pad.other);
 	fprintf(file, "  closepath gsave %s grestore stroke\n",
-	    hatch(inst->u.pad.layers));
+	    hatch(layers_to_pad_type(inst->u.pad.layers)));
 
 	if (show_name && !inst->u.pad.hole)
 		ps_pad_name(file, inst);
