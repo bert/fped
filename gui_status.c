@@ -24,6 +24,7 @@
 #include "error.h"
 #include "unparse.h"
 #include "obj.h"
+#include "layer.h"
 #include "gui_util.h"
 #include "gui_style.h"
 #include "gui_canvas.h"
@@ -195,28 +196,7 @@ static GtkWidget *pad_type;
 
 static void show_pad_type(void)
 {
-	const char *s;
-
-	switch (*curr_pad_type) {
-	case pt_normal:
-		s = "normal";
-		break;
-	case pt_bare:
-		s = "bare";
-		break;
-	case pt_trace:
-		s = "trace";
-		break;
-	case pt_paste:
-		s = "paste";
-		break;
-	case pt_mask:
-		s = "mask";
-		break;
-	default:
-		abort();
-	}
-	gtk_label_set_text(GTK_LABEL(pad_type), s);
+	gtk_label_set_text(GTK_LABEL(pad_type), pad_type_name(*curr_pad_type));
 }
 
 

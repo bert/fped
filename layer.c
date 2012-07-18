@@ -1,8 +1,8 @@
 /*
  * layer.c - PCB layers on a pad
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,6 +81,25 @@ enum pad_type layers_to_pad_type(layer_type layers)
 			return pt_paste;
 		if (layers & LAYER_MASK_TOP)
 			return pt_mask;
+		abort();
+	}
+}
+
+
+const char *pad_type_name(enum pad_type type)
+{
+	switch (type) {
+	case pt_normal:
+		return "normal";
+	case pt_bare:
+		return "bare";
+	case pt_trace:
+		return "trace";
+	case pt_paste:
+		return "paste";
+	case pt_mask:
+		return "mask";
+	default:
 		abort();
 	}
 }

@@ -1,8 +1,8 @@
 /*
  * layer.h - PCB layers on a pad
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,6 +75,7 @@ enum pad_type {
 
 layer_type pad_type_to_layers(enum pad_type type);
 enum pad_type layers_to_pad_type(layer_type layers);
+const char *pad_type_name(enum pad_type type);
 
 layer_type mech_hole_layers(void);
 
