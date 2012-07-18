@@ -189,18 +189,26 @@ static void ps_string(FILE *file, const char *s)
 }
 
 
-/* ----- Items ------------------------------------------------------------- */
-
-
-static void ps_pad_name(FILE *file, const struct inst *inst)
+static void ps_filled_box(FILE *file, struct coord a, struct coord b,
+    const char *pattern)
 {
-	struct coord a = inst->base;
-	struct coord b = inst->u.pad.other;
-	const char *s;
+	fprintf(file, "0 setgray %d setlinewidth\n", PS_HATCH_LINE);
+	fprintf(file, "  %d %d moveto\n", a.x, a.y);
+	fprintf(file, "  %d %d lineto\n", b.x, a.y);
+	fprintf(file, "  %d %d lineto\n", b.x, b.y);
+	fprintf(file, "  %d %d lineto\n", a.x, b.y);
+	fprintf(file, "  closepath gsave %s grestore stroke\n", pattern);
+}
+
+
+static void ps_outlined_text_in_rect(FILE *file, const char *s,
+    struct coord a, struct coord b)
+{
+	const char *t;
 	unit_type h, w;
 
-	for (s = inst->u.pad.name; *s == ' '; s++);
-	if (!*s)
+	for (t = s; *t == ' '; t++);
+	if (!*t)
 		return;
 	h = a.y-b.y;
 	w = a.x-b.x;
@@ -210,13 +218,23 @@ static void ps_pad_name(FILE *file, const struct inst *inst)
 		w = -w;
 	fprintf(file, "0 setgray /Helvetica-Bold findfont dup\n");
 	fprintf(file, "   ");
-	ps_string(file, inst->u.pad.name);
+	ps_string(file, s);
 	fprintf(file, " %d %d\n", w/2, h/2);
 	fprintf(file, "   boxfont\n");
 	fprintf(file, "   %d %d moveto\n", (a.x+b.x)/2, (a.y+b.y)/2);
 	fprintf(file, "   ");
-	ps_string(file, inst->u.pad.name);
+	ps_string(file, s);
 	fprintf(file, " center %d showoutlined newpath\n", PS_FONT_OUTLINE);
+}
+
+
+/* ----- Items ------------------------------------------------------------- */
+
+
+static void ps_pad_name(FILE *file, const struct inst *inst)
+{
+	ps_outlined_text_in_rect(file, inst->u.pad.name,
+	    inst->base, inst->u.pad.other);
 }
 
 
@@ -241,15 +259,7 @@ static const char *hatch(layer_type layers)
 
 static void ps_pad(FILE *file, const struct inst *inst, int show_name)
 {
-	struct coord a = inst->base;
-	struct coord b = inst->u.pad.other;
-
-	fprintf(file, "0 setgray %d setlinewidth\n", PS_HATCH_LINE);
-	fprintf(file, "  %d %d moveto\n", a.x, a.y);
-	fprintf(file, "  %d %d lineto\n", b.x, a.y);
-	fprintf(file, "  %d %d lineto\n", b.x, b.y);
-	fprintf(file, "  %d %d lineto\n", a.x, b.y);
-	fprintf(file, "  closepath gsave %s grestore stroke\n",
+	ps_filled_box(file, inst->base, inst->u.pad.other,
 	    hatch(inst->u.pad.layers));
 
 	if (show_name && !inst->u.pad.hole)
