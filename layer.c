@@ -53,7 +53,7 @@ layer_type pad_type_to_layers(enum pad_type type)
 		layers |= LAYER_COPPER_TOP | LAYER_MASK_TOP;
 		break;
 	case pt_trace:
-		layers |= LAYER_COPPER_TOP;
+		layers = LAYER_COPPER_TOP;
 		break;
 	case pt_paste:
 		layers = LAYER_PASTE_TOP;
