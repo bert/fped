@@ -109,6 +109,7 @@ struct postscript_params postscript_params = {
 
 static const struct postscript_params minimal_params;
 static struct postscript_params active_params;
+static int pad_type_seen[pt_n];
 
 
 /* ----- Boxes ------------------------------------------------------------- */
@@ -265,8 +266,10 @@ static const char *hatch(enum pad_type type)
 
 static void ps_pad(FILE *file, const struct inst *inst, int show_name)
 {
-	ps_filled_box(file, inst->base, inst->u.pad.other,
-	    hatch(layers_to_pad_type(inst->u.pad.layers)));
+	enum pad_type type = layers_to_pad_type(inst->u.pad.layers);
+
+	pad_type_seen[type] = 1;
+	ps_filled_box(file, inst->base, inst->u.pad.other, hatch(type));
 
 	if (show_name && !inst->u.pad.hole)
 		ps_pad_name(file, inst);
@@ -299,10 +302,13 @@ static void ps_rounded_rect(FILE *file, struct coord a, struct coord b)
 
 static void ps_rpad(FILE *file, const struct inst *inst, int show_name)
 {
+	enum pad_type type = layers_to_pad_type(inst->u.pad.layers);
+
+	pad_type_seen[type] = 1;
+
 	fprintf(file, "0 setgray %d setlinewidth\n", PS_HATCH_LINE);
 	ps_rounded_rect(file, inst->base, inst->u.pad.other);
-	fprintf(file, "  closepath gsave %s grestore stroke\n",
-	    hatch(layers_to_pad_type(inst->u.pad.layers)));
+	fprintf(file, "  closepath gsave %s grestore stroke\n", hatch(type));
 
 	if (show_name && !inst->u.pad.hole)
 		ps_pad_name(file, inst);
@@ -844,7 +850,8 @@ static void ps_keys(FILE *file, double w, double h)
 	enum pad_type i;
 
 	for (i = 0; i != pt_n; i++)
-		ps_key(file, w, h, i);
+		if (pad_type_seen[i])
+			ps_key(file, w, h, i);
 }
 
 
@@ -1209,6 +1216,7 @@ static void ps_package_fullpage(FILE *file, const struct pkg *pkg, int page)
 	}
 	fprintf(file, "gsave\n");
 	fprintf(file, "%d %d translate\n", (int) (-cx*f), (int) (-cy*f)+yoff);
+	memset(pad_type_seen, 0, sizeof(pad_type_seen));
 	ps_draw_package(file, pkg, f, 0);
 	fprintf(file, "grestore\n");
 	if (active_params.show_key) {
