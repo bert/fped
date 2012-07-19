@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 
 #include "util.h"
@@ -88,6 +89,9 @@
 #define	PS_CROSS_WIDTH		mm_to_units(0.01)
 #define	PS_CROSS_DASH		mm_to_units(0.1)
 
+#define	PS_KEY_GAP		mm_to_units(8)
+#define	PS_KEY_HEIGTH		mm_to_units(8)
+
 #define TEXT_HEIGHT_FACTOR	1.5	/* height/width of typical text */
 
 
@@ -99,6 +103,7 @@ struct postscript_params postscript_params = {
 	.show_stuff	= 0,
 	.label_vecs	= 0,
 	.show_meas	= 1,
+	.show_key	= 0,
 };
 
 static const struct postscript_params minimal_params;
@@ -806,6 +811,42 @@ static void ps_unit(FILE *file,
 }
 
 
+static void ps_key(FILE *file, double w, double h, enum pad_type type)
+{
+	char tmp[20]; /* @@@ plenty :) */
+	double f = 32;
+	struct coord a, b;
+	unit_type key_w;
+
+	key_w = (w-2*PS_KEY_GAP-PS_KEY_GAP*(pt_n-1))/pt_n;
+	a.x = b.x = (key_w+PS_KEY_GAP)*type-w/2+PS_KEY_GAP;
+	a.y = b.y = -h/2-PS_KEY_GAP;
+	b.x += key_w;
+	b.y -= PS_KEY_HEIGTH;
+
+	a.x /= f;
+	a.y /= f;
+	b.x /= f;
+	b.y /= f;
+
+	strcpy(tmp, pad_type_name(type));
+	tmp[0] = toupper(tmp[0]);
+	fprintf(file, "gsave %f %f scale\n", f, f);
+	ps_filled_box(file, a, b, hatch(type));
+	ps_outlined_text_in_rect(file, tmp, a, b);
+	fprintf(file, "grestore\n");
+}
+
+
+static void ps_keys(FILE *file, double w, double h)
+{
+	enum pad_type i;
+
+	for (i = 0; i != pt_n; i++)
+		ps_key(file, w, h, i);
+}
+
+
 static void ps_package(FILE *file, const struct pkg *pkg, int page)
 {
 	struct bbox bbox;
@@ -1141,7 +1182,8 @@ static void ps_package_fullpage(FILE *file, const struct pkg *pkg, int page)
 	unit_type cx, cy;
 	struct bbox bbox;
 	double fx, fy, f;
-	double d;
+	double w = 2.0*PAGE_HALF_WIDTH;
+	double h = 2.0*PAGE_HALF_HEIGHT;
 
 	ps_page(file, page, pkg);
 	active_params = postscript_params;
@@ -1151,16 +1193,22 @@ static void ps_package_fullpage(FILE *file, const struct pkg *pkg, int page)
 	if (active_params.zoom) {
 		f = active_params.zoom;
 	} else {
-		d = active_params.max_width ? active_params.max_width :
-		    2.0*PAGE_HALF_WIDTH;
-		fx = d/(bbox.max.x-bbox.min.x);
-		d = active_params.max_height ? active_params.max_height :
-		    2.0*PAGE_HALF_HEIGHT;
-		fy = d/(bbox.max.y-bbox.min.y);
+		if (active_params.max_width)
+			w = active_params.max_width;
+		fx = w/(bbox.max.x-bbox.min.x);
+		if (active_params.max_height)
+			h = active_params.max_height;
+		if (active_params.show_key)
+			h -= 2*PS_KEY_HEIGTH;
+		fy = h/(bbox.max.y-bbox.min.y);
 		f = fx < fy ? fx : fy;
 	}
+	fprintf(file, "gsave\n");
 	fprintf(file, "%d %d translate\n", (int) (-cx*f), (int) (-cy*f));
 	ps_draw_package(file, pkg, f, 0);
+	fprintf(file, "grestore\n");
+	if (active_params.show_key)
+		ps_keys(file, w, h);
 	fprintf(file, "showpage\n");
 }
 

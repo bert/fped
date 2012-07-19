@@ -73,12 +73,13 @@ static void usage(const char *name)
 "              write gnuplot output, then exit\n"
 "  -k          write KiCad output, then exit\n"
 "  -p          write Postscript output, then exit\n"
-"  -P [-s scale] [-1 package]\n"
+"  -P [-K] [-s scale] [-1 package]\n"
 "              write Postscript output (full page), then exit\n"
 "  -T          test mode. Load file, then exit\n"
 "  -T -T       test mode. Load file, dump to stdout, then exit\n\n"
 "Common options:\n"
 "  -1 name     output only the specified package\n"
+"  -K          show the pad type key\n"
 "  -s scale    scale factor for -P (default: auto-scale)\n"
 "  -s [width]x[heigth]\n"
 "              auto-scale to fit within specified box. Dimensions in mm.\n"
@@ -132,7 +133,7 @@ int main(int argc, char **argv)
 	const char *one = NULL;
 	int c;
 
-	while ((c = getopt(argc, argv, "1:gkps:D:I:PTU:")) != EOF)
+	while ((c = getopt(argc, argv, "1:gkps:D:I:KPTU:")) != EOF)
 		switch (c) {
 		case '1':
 			one = optarg;
@@ -157,6 +158,9 @@ int main(int argc, char **argv)
 				usage(*argv);
 			batch = batch_ps_fullpage;
 			break;
+		case 'K':
+			postscript_params.show_key = 1;
+			break;
 		case 's':
 			if (batch != batch_ps_fullpage)
 				usage(*argv);
@@ -180,6 +184,8 @@ int main(int argc, char **argv)
 
 	if (one && batch != batch_ps && batch != batch_ps_fullpage &&
 	    batch != batch_gnuplot)
+		usage(name);
+	if (postscript_params.show_key && batch != batch_ps_fullpage)
 		usage(name);
 
 	if (!batch) {

@@ -25,6 +25,7 @@ struct postscript_params {
         int show_stuff;         /* vecs and frames */
         int label_vecs;
         int show_meas;
+	int show_key;
 } postscript_params;
 
 
