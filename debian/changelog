@@ -1,4 +1,4 @@
-fped (0.0+201206-1) unstable; urgency=low
+fped (0.1+201206-1) unstable; urgency=low
 
   * New snapshot, taken from commit e6fa108
   * Switched to new project host: http://projects.qi-hardware.com/p/fped
