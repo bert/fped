@@ -89,7 +89,8 @@
 #define	PS_CROSS_WIDTH		mm_to_units(0.01)
 #define	PS_CROSS_DASH		mm_to_units(0.1)
 
-#define	PS_KEY_GAP		mm_to_units(8)
+#define	PS_KEY_X_GAP		mm_to_units(8)
+#define	PS_KEY_Y_GAP		mm_to_units(4)
 #define	PS_KEY_HEIGTH		mm_to_units(8)
 
 #define TEXT_HEIGHT_FACTOR	1.5	/* height/width of typical text */
@@ -818,9 +819,9 @@ static void ps_key(FILE *file, double w, double h, enum pad_type type)
 	struct coord a, b;
 	unit_type key_w;
 
-	key_w = (w-2*PS_KEY_GAP-PS_KEY_GAP*(pt_n-1))/pt_n;
-	a.x = b.x = (key_w+PS_KEY_GAP)*type-w/2+PS_KEY_GAP;
-	a.y = b.y = -h/2-PS_KEY_GAP;
+	key_w = (w-2*PS_KEY_X_GAP-PS_KEY_X_GAP*(pt_n-1))/pt_n;
+	a.x = b.x = (key_w+PS_KEY_X_GAP)*type-w/2+PS_KEY_X_GAP;
+	a.y = b.y = -h/2-PS_KEY_Y_GAP;
 	b.x += key_w;
 	b.y -= PS_KEY_HEIGTH;
 
@@ -1184,6 +1185,7 @@ static void ps_package_fullpage(FILE *file, const struct pkg *pkg, int page)
 	double fx, fy, f;
 	double w = 2.0*PAGE_HALF_WIDTH;
 	double h = 2.0*PAGE_HALF_HEIGHT;
+	int yoff = 0;
 
 	ps_page(file, page, pkg);
 	active_params = postscript_params;
@@ -1198,17 +1200,22 @@ static void ps_package_fullpage(FILE *file, const struct pkg *pkg, int page)
 		fx = w/(bbox.max.x-bbox.min.x);
 		if (active_params.max_height)
 			h = active_params.max_height;
-		if (active_params.show_key)
-			h -= 2*PS_KEY_HEIGTH;
+		if (active_params.show_key) {
+			yoff = PS_KEY_HEIGTH+PS_KEY_Y_GAP;
+			h -= yoff;
+		}
 		fy = h/(bbox.max.y-bbox.min.y);
 		f = fx < fy ? fx : fy;
 	}
 	fprintf(file, "gsave\n");
-	fprintf(file, "%d %d translate\n", (int) (-cx*f), (int) (-cy*f));
+	fprintf(file, "%d %d translate\n", (int) (-cx*f), (int) (-cy*f)+yoff);
 	ps_draw_package(file, pkg, f, 0);
 	fprintf(file, "grestore\n");
-	if (active_params.show_key)
+	if (active_params.show_key) {
+		fprintf(file, "gsave 0 %d translate\n", yoff);
 		ps_keys(file, w, h);
+		fprintf(file, "grestore\n");
+	}
 	fprintf(file, "showpage\n");
 }
 
