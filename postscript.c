@@ -1085,7 +1085,7 @@ fprintf(file,
 
 	fprintf(file,
 "/showoutlined {\n"
-"    gsave 2 mul setlinewidth 1 setgray\n"
+"    gsave 2 mul setlinewidth 1 setgray 1 setlinejoin\n"
 "    dup false charpath flattenpath stroke grestore\n"
 "    show } def\n");
 
