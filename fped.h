@@ -1,8 +1,8 @@
 /*
  * fped.h - Things fped.c exports
  *
- * Written 2010 by Werner Almesberger
- * Copyright 2010 by Werner Almesberger
+ * Written 2010, 2012 by Werner Almesberger
+ * Copyright 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,5 +16,8 @@
 
 extern char *save_file_name;
 extern int no_save;
+
+
+void reload(void);
 
 #endif /* !FPED_H */

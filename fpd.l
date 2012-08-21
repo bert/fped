@@ -35,6 +35,12 @@ void scan_empty(void)
 }
 
 
+void scan_file(void)
+{
+	start_token = START_FPD;
+}
+
+
 void scan_expr(const char *s)
 {
 	start_token = START_EXPR;

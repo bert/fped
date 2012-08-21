@@ -64,6 +64,21 @@ static void load_file(const char *name)
 }
 
 
+void reload(void)
+{
+	struct frame *old_frames;
+
+	/* @@@ this needs more work */
+	purge();
+	old_frames = frames;
+	scan_file();
+	load_file(save_file_name);
+	if (!instantiate())
+		frames = old_frames;
+	change_world();
+}
+
+
 static void usage(const char *name)
 {
 	fprintf(stderr,
