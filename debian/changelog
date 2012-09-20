@@ -1,6 +1,6 @@
-fped (0.1+201206-1) unstable; urgency=low
+fped (0.1+201209-1) unstable; urgency=low
 
-  * New snapshot, taken from commit e6fa108
+  * New snapshot, taken from commit dfac631
   * Switched to new project host: http://projects.qi-hardware.com/p/fped
   * debian/rules:
     - rewrite as a minimal rules file using dh
