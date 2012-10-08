@@ -32,16 +32,18 @@ PNGS = intro-1.png intro-2.png intro-3.png intro-4.png intro-5.png \
        intro-6.png concept-inst.png
 
 SHELL = /bin/bash
+
+CPPFLAGS +=
 CFLAGS_GTK = `pkg-config --cflags gtk+-2.0`
 LIBS_GTK = `pkg-config --libs gtk+-2.0`
 
 CFLAGS_WARN = -Wall -Wshadow -Wmissing-prototypes \
 	      -Wmissing-declarations -Wno-format-zero-length
-CFLAGS = -g -std=gnu99 $(CFLAGS_GTK) -DCPP='"cpp"' \
+CFLAGS += -g -std=gnu99 $(CFLAGS_GTK) -DCPP='"cpp"' \
          -DVERSION='"$(GIT_VERSION)$(GIT_STATUS)"' $(CFLAGS_WARN)
 SLOPPY = -Wno-unused -Wno-implicit-function-declaration \
 	 -Wno-missing-prototypes -Wno-missing-declarations
-LDFLAGS =
+LDFLAGS +=
 LDLIBS = -lm -lfl $(LIBS_GTK)
 YACC = bison -y
 YYFLAGS = -v
@@ -97,7 +99,7 @@ endif
 # http://scottmcpeak.com/autodepend/autodepend.html
 
 %.o:		%.c
-		$(CC) -c $(CFLAGS) $*.c -o $*.o
+		$(CC) $(CPPFLAGS) $(CFLAGS) -c $*.c -o $*.o
 		$(call MKDEP, $*)
 
 # generate 26x26 pixels icons, then drop the 1-pixel frame
