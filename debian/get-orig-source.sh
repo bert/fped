@@ -6,7 +6,7 @@
 
 set -e
 
-: ${REPO=$(git rev-parse --git-dir)}
+: ${REPO=git://projects.qi-hardware.com/fped.git}
 : ${BRANCH=remotes/origin/master}
 
 mkdir debian-orig-source
@@ -26,5 +26,5 @@ upstream_version="${release}+${date}"
 
 # Generate tarball.
 echo "packaging $(git rev-parse --short FETCH_HEAD)"
-git archive FETCH_HEAD |
+git archive --format=tar --prefix="fped_${date}/" FETCH_HEAD |
 	gzip -n -9 >"fped_$upstream_version.orig.tar.gz"
