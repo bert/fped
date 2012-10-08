@@ -1,6 +1,6 @@
-fped (0.1+201209-1) unstable; urgency=low
+fped (0.1+201210-1) unstable; urgency=low
 
-  * New snapshot, taken from commit dfac631
+  * New snapshot, taken from commit 5b21495
   * Switched to new project host: http://projects.qi-hardware.com/p/fped
   * debian/rules:
     - include debian buildflags
