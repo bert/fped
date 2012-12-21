@@ -255,6 +255,7 @@ extern struct frame *frames; /* root frame first */
 extern struct frame *active_frame;
 extern void *instantiation_error;
 extern enum allow_overlap allow_overlap;
+extern int holes_linked;
 
 
 struct inst;

@@ -133,6 +133,7 @@ SP	[\t ]*
 <INITIAL>"allow"		BEGIN(ALLOW);
 <ALLOW>"overlap"		return TOK_ALLOW_OVERLAP;
 <ALLOW>"touch"			return TOK_ALLOW_TOUCH;
+<ALLOW>"holes"			return TOK_ALLOW_HOLES;
 
 <INITIAL>"%del"			{ BEGIN(NOKEYWORD);
 				  return TOK_DBG_DEL; }

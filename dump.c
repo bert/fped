@@ -591,6 +591,8 @@ static void dump_allow(FILE *file)
 	default:
 		abort();
 	}
+	if (!holes_linked)
+		fprintf(file, "allow holes\n");
 }
 
 

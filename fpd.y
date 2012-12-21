@@ -462,7 +462,7 @@ static int dbg_meas(const char *name)
 %token		TOK_DBG_DEL TOK_DBG_MOVE TOK_DBG_FRAME
 %token		TOK_DBG_PRINT TOK_DBG_IPRINT
 %token		TOK_DBG_DUMP TOK_DBG_EXIT TOK_DBG_TSORT TOK_DBG_MEAS
-%token		TOK_ALLOW_OVERLAP TOK_ALLOW_TOUCH
+%token		TOK_ALLOW_HOLES TOK_ALLOW_OVERLAP TOK_ALLOW_TOUCH
 
 %token	<num>	NUMBER
 %token	<str>	STRING
@@ -544,9 +544,16 @@ opt_setup:
 
 setup:
 	unit
-	| allow
-	| unit allow
-	| allow unit
+	| allow_pads
+	| allow_holes
+	| unit allow_pads
+	| unit allow_pads allow_holes
+	| unit allow_holes
+	| unit allow_holes allow_pads
+	| allow_pads unit
+	| allow_pads unit allow_holes
+	| allow_holes unit
+	| allow_holes unit allow_pads
 	;
 
 unit:
@@ -565,7 +572,7 @@ unit:
 		}
 	;
 
-allow:
+allow_pads:
 	TOK_ALLOW_TOUCH
 		{
 			allow_overlap = ao_touch;
@@ -573,6 +580,13 @@ allow:
 	| TOK_ALLOW_OVERLAP
 		{
 			allow_overlap = ao_any;
+		}
+	;
+
+allow_holes:
+	TOK_ALLOW_HOLES
+		{
+			holes_linked = 0;
 		}
 	;
 

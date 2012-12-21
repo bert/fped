@@ -177,7 +177,14 @@ allow overlap
 Do not check for overlaps at all.
 
 If the "allow" directive is omitted, fped defaults to allowing
-neigher overlap nor touch.
+neither overlap nor touch.
+
+There is also the following experimental directive that can be used
+alone or without one of the overlap-checking directives:
+
+allow holes
+
+Allow multiple holes per pad.
 
 
 Vectors

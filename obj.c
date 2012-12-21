@@ -40,6 +40,7 @@ struct frame *frames = NULL;
 struct frame *active_frame = NULL;
 void *instantiation_error = NULL;
 enum allow_overlap allow_overlap = ao_none;
+int holes_linked = 1;
 
 
 static struct bitset *frame_set; /* frames visited in "call chain" */
@@ -577,7 +578,7 @@ int instantiate(void)
 	find_vec = NULL;
 	find_obj = NULL;
 	if (ok)
-		ok = link_holes();
+		ok = link_holes(holes_linked);
 	if (ok)
 		ok = refine_layers(allow_overlap);
 	if (ok)
