@@ -1,8 +1,8 @@
 /*
  * inst.h - Instance structures
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ struct inst_ops {
 	void (*save)(FILE *file, struct inst *self);
 	void (*draw)(struct inst *self);
 	struct pix_buf *(*hover)(struct inst *self);
-	unit_type (*distance)(struct inst *self, struct coord pos, 
+	unit_type (*distance)(struct inst *self, struct coord pos,
 	    unit_type scale);
 	void (*select)(struct inst *self);
 	void (*begin_drag_move)(struct inst *from, int i);
@@ -113,6 +113,7 @@ struct inst {
 		struct {
 			struct coord end;
 			double offset;
+			int valid;	/* only set if references exist */
 		} meas;
 	} u;
 	struct inst *next;
@@ -123,6 +124,7 @@ struct pkg {
 	const char *name;	/* NULL if global package */
 	struct inst *insts[ip_n];
 	struct inst **next_inst[ip_n];
+	struct bbox bbox;	/* bbox only of items in this package */
 	struct sample **samples;
 	int n_samples;
 	struct pkg *next;
@@ -133,6 +135,7 @@ extern struct inst *selected_inst;
 extern struct pkg *pkgs;	/* list of packages */
 extern struct pkg *active_pkg;	/* package selected in GUI */
 extern struct pkg *curr_pkg;	/* package currently being instantiated */
+extern struct pkg *reachable_pkg; /* package reachable with active vars */
 extern struct bbox active_frame_bbox;
 
 /*
@@ -154,7 +157,7 @@ extern struct inst *frame_instantiating;
 	for (prio = ip_n-1; prio != (enum inst_prio) -1; prio--)
 
 #define	FOR_PKG_INSTS(pkg, prio, inst)					\
-	for (inst = (pkg)->insts[prio]; inst; inst = inst->next)
+	for (inst = (pkg) ? (pkg)->insts[prio] : NULL; inst; inst = inst->next)
 
 #define	FOR_ALL_INSTS(i, prio, inst)					\
 	for (i = 0; i != 2; i++)					\
@@ -194,9 +197,9 @@ void inst_begin_frame(struct obj *obj, struct frame *frame,
     struct coord base, int active, int is_active_frame);
 void inst_end_frame(const struct frame *frame);
 
-void inst_select_pkg(const char *name);
+void inst_select_pkg(const char *name, int active);
 
-struct bbox inst_get_bbox(void);
+struct bbox inst_get_bbox(const struct pkg *pkg);
 
 void inst_start(void);
 void inst_commit(void);
@@ -205,7 +208,7 @@ void inst_revert(void);
 void inst_draw(void);
 void inst_highlight_vecs(int (*pick)(struct inst *inst, void *user),
      void *user);
-struct inst *inst_find_vec(struct coord pos, 
+struct inst *inst_find_vec(struct coord pos,
     int (*pick)(struct inst *inst, void *user), void *user);
 struct inst *insts_ip_vec(void);
 

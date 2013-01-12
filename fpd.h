@@ -1,8 +1,8 @@
 /*
  * fpd.c - Things fpd.l and fpd.y export
  *
- * Written 2009 by Werner Almesberger
- * Copyright 2009 by Werner Almesberger
+ * Written 2009, 2012 by Werner Almesberger
+ * Copyright 2009, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,10 @@ extern const char *var_id;
 extern struct value *var_value_list;
 
 
+int dbg_print(const struct expr *expr, const struct frame *frame);
+
 void scan_empty(void);
+void scan_file(void);
 void scan_expr(const char *s);
 void scan_var(const char *s);
 void scan_values(const char *s);

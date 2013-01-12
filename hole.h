@@ -1,8 +1,8 @@
 /*
  * hole.h - Classify holes and connect them with pads
  *
- * Written 2010 by Werner Almesberger
- * Copyright 2010 by Werner Almesberger
+ * Written 2010, 2012 by Werner Almesberger
+ * Copyright 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,6 +13,6 @@
 #ifndef HOLE_H
 #define HOLE_H
 
-int link_holes(void);
+int link_holes(int linked);
 
 #endif /* !HOLE_H */

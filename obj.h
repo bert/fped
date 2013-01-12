@@ -1,8 +1,8 @@
 /*
  * obj.h - Object definition model
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,6 +59,10 @@ struct var {
 	/* back reference */
 	struct frame *frame;
 	struct table *table; /* NULL if loop */
+
+
+	/* key: 0 if the variable is set, 1 if the variable is compared */
+	int key;
 
 	/* for the GUI */
 	GtkWidget *widget;
@@ -125,6 +129,7 @@ struct loop {
 struct sample;
 
 struct vec {
+	char nul_tag;	/* tag for identifying vectors */
 	const char *name; /* NULL if anonymous */
 	struct expr *x;
 	struct expr *y;
@@ -185,6 +190,7 @@ enum obj_type {
 	ot_line,
 	ot_arc,
 	ot_meas,
+	ot_iprint,
 };
 
 struct frame_ref {
@@ -214,6 +220,10 @@ struct arc {
 	struct expr *width;
 };
 
+struct iprint {
+	struct expr *expr;
+};
+
 struct obj {
 	enum obj_type type;
 	const char *name; /* NULL if anonymous */
@@ -225,6 +235,7 @@ struct obj {
 		struct hole hole;
 		struct arc arc;
 		struct meas meas;
+		struct iprint iprint;
 	} u;
 	struct frame *frame;
 	struct vec *base;
@@ -244,6 +255,7 @@ extern struct frame *frames; /* root frame first */
 extern struct frame *active_frame;
 extern void *instantiation_error;
 extern enum allow_overlap allow_overlap;
+extern int holes_linked;
 
 
 struct inst;

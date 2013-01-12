@@ -1,8 +1,8 @@
 /*
  * expr.c - Expressions and values
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,6 +12,7 @@
 
 
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 #include "util.h"
@@ -95,6 +96,18 @@ int to_unit(struct num *n)
 }
 
 
+/* ----- number to string conversion (hackish) ----------------------------- */
+
+
+static char *num_to_string(struct num n)
+{
+	static char buf[100]; /* enough :-) */
+
+	snprintf(buf, sizeof(buf), "%lg%s", n.n, str_unit(n));
+	return buf;
+}
+
+
 /* ----- primary expressions ----------------------------------------------- */
 
 
@@ -131,7 +144,7 @@ struct num eval_var(const struct frame *frame, const char *name)
 		value = table->curr_row ? table->curr_row->values :
 		    table->active_row->values;
 		for (var = table->vars; var; var = var->next) {
-			if (var->name == name) {
+			if (!var->key && var->name == name) {
 				if (var->visited) {
 					fail("recursive evaluation through "
 					    "\"%s\"", name);
@@ -141,7 +154,6 @@ struct num eval_var(const struct frame *frame, const char *name)
 				res = eval_num(value->expr, frame);
 				var->visited = 0;
 				return res;
-				
 			}
 			value = value->next;
 		}
@@ -176,14 +188,13 @@ static const char *eval_string_var(const struct frame *frame, const char *name)
 		value = table->curr_row ? table->curr_row->values :
 		    table->active_row->values;
 		for (var = table->vars; var; var = var->next) {
-			if (var->name == name) {
+			if (!var->key && var->name == name) {
 				if (var->visited)
 					return NULL;
 				var->visited = 1;
 				res = eval_str(value->expr, frame);
 				var->visited = 0;
 				return res;
-				
 			}
 			value = value->next;
 		}
@@ -207,6 +218,55 @@ struct num op_var(const struct expr *self, const struct frame *frame)
 	if (is_undef(res))
 		fail("undefined variable \"%s\"", self->u.var);
 	return res;
+}
+
+
+/* ----- Variable equivalence ---------------------------------------------- */
+
+
+static int num_eq(struct num a, struct num b)
+{
+	if (a.exponent != b.exponent)
+		return 0;
+	if (a.exponent && a.type != b.type) {
+		if (a.type == nt_mil)
+			return mil_to_mm(a.n, a.exponent) == b.n;
+		else
+			return a.n == mil_to_mm(b.n, b.exponent);
+	}
+	return a.n == b.n;
+}
+
+
+int var_eq(const struct frame *frame, const char *name,
+    const struct expr *expr)
+{
+	const char *vs, *es;
+	struct num vn, en;
+
+	vs = eval_string_var(frame, name);
+	if (!vs) {
+		vn = eval_var(frame, name);
+		if (is_undef(vn)) {
+			fail("undefined variable \"%s\"", name);
+			return -1;
+		}
+	}
+	es = eval_str(expr, frame);
+	if (!es) {
+		en = eval_num(expr, frame);
+		if (is_undef(en))
+			return -1;
+	}
+	if (vs || es) {
+		if (!vs)
+			vs = num_to_string(vn);
+		if (!es)
+			es = num_to_string(en);
+		return !strcmp(vs, es);
+	} else {
+		return num_eq(vn, en);
+	}
 }
 
 
@@ -270,7 +330,7 @@ static struct num sin_cos(const struct expr *self,
 	if (is_undef(res))
 		return undef;
 	if (!is_dimensionless(res)) {
-		fail("angle must be dimensionless");	
+		fail("angle must be dimensionless");
 		return undef;
 	}
 	res.n = fn(res.n/180.0*M_PI);
@@ -298,11 +358,11 @@ struct num op_sqrt(const struct expr *self, const struct frame *frame)
 	if (is_undef(res))
 		return undef;
 	if (res.exponent & 1) {
-		fail("exponent of sqrt argument must be a multiple of two");	
+		fail("exponent of sqrt argument must be a multiple of two");
 		return undef;
 	}
 	if (res.n < 0) {
-		fail("argument of sqrt must be positive");	
+		fail("argument of sqrt must be positive");
 		return undef;
 	}
 	res.n = sqrt(res.n);
@@ -318,6 +378,17 @@ struct num op_minus(const struct expr *self, const struct frame *frame)
 	res = eval_num(self->u.op.a, frame);
 	if (!is_undef(res))
 		res.n = -res.n;
+	return res;
+}
+
+
+struct num op_floor(const struct expr *self, const struct frame *frame)
+{
+	struct num res;
+
+	res = eval_num(self->u.op.a, frame);
+	if (!is_undef(res))
+		res.n = floor(res.n);
 	return res;
 }
 
@@ -425,7 +496,6 @@ char *expand(const char *name, const struct frame *frame)
 {
 	int len = strlen(name);
 	char *buf = alloc_size(len+1);
-	char num_buf[100]; /* enough :-) */
 	const char *s, *s0;
 	char *var;
 	const char *var_unique, *value_string;
@@ -443,9 +513,9 @@ char *expand(const char *name, const struct frame *frame)
 			while (is_id_char(*s, s == s0))
 				s++;
 			if (s == s0) {
-				if (*s)
+				if (*s) {
 					goto invalid;
-				else {
+				} else {
 					fail("incomplete variable name");
 					goto fail;
 				}
@@ -472,18 +542,15 @@ char *expand(const char *name, const struct frame *frame)
 		var_unique = unique(var);
 		free(var);
 		value_string = eval_string_var(frame, var_unique);
-		if (value_string)
-			value_len = strlen(value_string);
-		else {
+		if (!value_string) {
 			value = eval_var(frame, var_unique);
 			if (is_undef(value)) {
 				fail("undefined variable \"%s\"", var_unique);
 				goto fail;
 			}
-			value_len = snprintf(num_buf, sizeof(num_buf), "%lg%s",
-			    value.n, str_unit(value));
-			value_string = num_buf;
+			value_string = num_to_string(value);
 		}
+		value_len = strlen(value_string);
 		len += value_len;
 		buf = realloc(buf, len+1);
 		if (!buf)
@@ -533,7 +600,7 @@ static void vacate_op(struct expr *expr)
 		free(expr->u.str);
 		return;
 	}
-	if (expr->op == op_minus ||
+	if (expr->op == op_minus || expr->op == op_floor ||
 	    expr->op == op_sin || expr->op == op_cos || expr->op == op_sqrt) {
 		free_expr(expr->u.op.a);
 		return;

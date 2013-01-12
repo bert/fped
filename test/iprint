@@ -1,0 +1,101 @@
+#!/bin/sh
+. ./Common
+
+###############################################################################
+
+fped "iprint: loop" <<EOF
+loop x = 1, 3
+%iprint x
+EOF
+expect <<EOF
+1
+2
+3
+EOF
+
+#------------------------------------------------------------------------------
+
+fped "iprint: two tables (independent)" <<EOF
+table { a } { 1 } { 2 }
+table { b } { 3 } { 4 }
+
+%iprint a*10+b
+EOF
+expect <<EOF
+13
+14
+23
+24
+EOF
+
+#------------------------------------------------------------------------------
+
+fped "iprint: two tables (2nd references 1st)" <<EOF
+table { a } { 1 } { 2 }
+table { b } { 3+a } { 4+a }
+
+%iprint a*10+b
+EOF
+expect <<EOF
+14
+15
+25
+26
+EOF
+
+#------------------------------------------------------------------------------
+
+fped "iprint: two tables (1st references 2nd)" <<EOF
+table { a } { 1+b } { 2+b }
+table { b } { 3 } { 4 }
+
+%iprint a*10+b
+EOF
+expect <<EOF
+43
+54
+53
+64
+EOF
+
+#------------------------------------------------------------------------------
+
+fped "iprint: inside frame (global variable)" <<EOF
+frame foo {
+	%iprint n
+}
+
+loop n = 1, 2
+frame foo @
+EOF
+expect <<EOF
+1
+2
+EOF
+
+#------------------------------------------------------------------------------
+
+fped "iprint: inside frame (local variable) " <<EOF
+frame foo {
+	set n1 = n+1
+	%iprint n1
+}
+
+loop n = 1, 2
+frame foo @
+EOF
+expect <<EOF
+2
+3
+EOF
+
+#------------------------------------------------------------------------------
+
+fped_fail "iprint: undefined variable" <<EOF
+%iprint foo
+EOF
+expect <<EOF
+undefined variable "foo"
+EOF
+
+###############################################################################

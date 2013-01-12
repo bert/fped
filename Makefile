@@ -1,8 +1,8 @@
 #
 # Makefile - Makefile of fped, the footprint editor
 #
-# Written 2009-2011 by Werner Almesberger
-# Copyright 2009-2011 by Werner Almesberger
+# Written 2009-2012 by Werner Almesberger
+# Copyright 2009-2012 by Werner Almesberger
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,22 +32,30 @@ PNGS = intro-1.png intro-2.png intro-3.png intro-4.png intro-5.png \
        intro-6.png concept-inst.png
 
 SHELL = /bin/bash
+
+CPPFLAGS +=
 CFLAGS_GTK = `pkg-config --cflags gtk+-2.0`
 LIBS_GTK = `pkg-config --libs gtk+-2.0`
 
 CFLAGS_WARN = -Wall -Wshadow -Wmissing-prototypes \
 	      -Wmissing-declarations -Wno-format-zero-length
-CFLAGS = -g -std=gnu99 $(CFLAGS_GTK) -DCPP='"cpp"' \
+CFLAGS += -g -std=gnu99 $(CFLAGS_GTK) -DCPP='"cpp"' \
          -DVERSION='"$(GIT_VERSION)$(GIT_STATUS)"' $(CFLAGS_WARN)
 SLOPPY = -Wno-unused -Wno-implicit-function-declaration \
 	 -Wno-missing-prototypes -Wno-missing-declarations
-LDFLAGS =
+LDFLAGS +=
 LDLIBS = -lm -lfl $(LIBS_GTK)
 YACC = bison -y
 YYFLAGS = -v
 
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell [ -z "`git status -s -uno`" ] || echo +)
+
+MKDEP = $(DEPEND) $(1).c | \
+	sed -e \
+	'/^\(.*:\)\? */{p;s///;s/ *\\\?$$/ /;s/  */:\n/g;H;}' \
+	  -e '$${g;p;}' -e d >$(1).d; \
+	[ "$${PIPESTATUS[*]}" = "0 0" ] || { rm -f $(1).d; exit 1; }
 
 
 # ----- Verbosity control -----------------------------------------------------
@@ -91,12 +99,8 @@ endif
 # http://scottmcpeak.com/autodepend/autodepend.html
 
 %.o:		%.c
-		$(CC) -c $(CFLAGS) $*.c -o $*.o
-		$(DEPEND) $*.c | \
-		  sed -e \
-		    '/^\(.*:\)\? */{p;s///;s/ *\\\?$$/ /;s/  */:\n/g;H;}' \
-		    -e '$${g;p;}' -e d >$*.d; \
-		  [ "$${PIPESTATUS[*]}" = "0 0" ] || { rm -f $*.d; exit 1; }
+		$(CC) $(CPPFLAGS) $(CFLAGS) -c $*.c -o $*.o
+		$(call MKDEP, $*)
 
 # generate 26x26 pixels icons, then drop the 1-pixel frame
 
@@ -123,12 +127,14 @@ lex.yy.c:	fpd.l y.tab.h
 
 lex.yy.o:	lex.yy.c y.tab.h
 		$(CC) -c $(CFLAGS) $(SLOPPY) lex.yy.c
+		$(call MKDEP, lex.yy)
 
 y.tab.c y.tab.h: fpd.y
 		$(YACC) $(YYFLAGS) -d fpd.y
 
 y.tab.o:	y.tab.c
 		$(CC) -c $(CFLAGS) $(SLOPPY) y.tab.c
+		$(call MKDEP, y.tab)
 
 gui_tool.o gui.o: $(XPMS:%=icons/%)
 

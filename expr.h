@@ -1,8 +1,8 @@
 /*
  * expr.h - Expressions and values
  *
- * Written 2009 by Werner Almesberger
- * Copyright 2009 by Werner Almesberger
+ * Written 2009, 2012 by Werner Almesberger
+ * Copyright 2009, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -116,6 +116,7 @@ struct num op_cos(const struct expr *self, const struct frame *frame);
 struct num op_sqrt(const struct expr *self, const struct frame *frame);
 
 struct num op_minus(const struct expr *self, const struct frame *frame);
+struct num op_floor(const struct expr *self, const struct frame *frame);
 
 struct num op_add(const struct expr *self, const struct frame *frame);
 struct num op_sub(const struct expr *self, const struct frame *frame);
@@ -124,6 +125,9 @@ struct num op_div(const struct expr *self, const struct frame *frame);
 
 struct expr *new_op(op_type op);
 struct expr *binary_op(op_type op, struct expr *a, struct expr *b);
+
+int var_eq(const struct frame *frame, const char *name,
+    const struct expr *expr);
 
 struct num eval_var(const struct frame *frame, const char *name);
 

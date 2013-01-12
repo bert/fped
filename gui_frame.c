@@ -1,8 +1,8 @@
 /*
  * gui_frame.c - GUI, frame window
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -208,7 +208,7 @@ static void pop_up_frame(struct frame *frame, GdkEventButton *event)
 	    can_add_frame());
 
 	enable_add_var(frame, factory_frame);
-	
+
 	pop_up(popup_frame_widget, event, frame);
 }
 
@@ -218,7 +218,6 @@ static void pop_up_frame(struct frame *frame, GdkEventButton *event)
 
 static GtkItemFactory *factory_single_var;
 static GtkWidget *popup_single_var_widget;
-
 
 
 static void add_row_here(struct table *table, struct row **anchor)
@@ -582,7 +581,8 @@ static int find_var_in_frame(const struct frame *frame, const char *name,
 
 	for (table = frame->tables; table; table = table->next)
 		for (var = table->vars; var; var = var->next)
-			if (var != self && !strcmp(var->name, name))
+			if (var != self && !var->key &&
+			    !strcmp(var->name, name))
 				return 1;
 	for (loop = frame->loops; loop; loop = loop->next)
 		if (&loop->var != self && !strcmp(loop->var.name, name))
@@ -597,6 +597,8 @@ static int validate_var_name(const char *s, void *ctx)
 
 	if (!is_id(s))
 		return 0;
+	if (var->key)
+		return 1;
 	return !find_var_in_frame(var->frame, s, var);
 }
 
@@ -616,9 +618,9 @@ static void show_value(const struct expr *expr, const struct frame *frame)
 
 	status_set_type_x(NULL, "value =");
 	value_string = eval_str(expr, frame);
-	if (value_string)
+	if (value_string) {
 		status_set_x(NULL, "\"%s\"", value_string);
-	else {
+	} else {
 		value = eval_num(expr, frame);
 		if (is_undef(value))
 			status_set_x(NULL, "undefined");
@@ -652,10 +654,21 @@ static void edit_var(struct var *var,
 	status_set_name("Variable name", "%s", var->name);
 	show_var_value(var, var->frame);
 	edit_nothing();
+	edit_var_type(var);
 	edit_unique_with_values(&var->name, validate_var_name, var,
 	    set_values, user, max_values,
 	    "Variable name. "
 	    "Shortcut:<b><i>name</i>=<i>value</i>,<i>...</i> </b>");
+}
+
+
+static void set_col_values(void *user, const struct value *values,
+    int n_values);
+
+
+void reselect_var(struct var *var)
+{
+	edit_var(var, set_col_values, var, -1);
 }
 
 
@@ -801,7 +814,7 @@ static void build_assignment(GtkWidget *vbox, struct frame *frame,
     struct table *table)
 {
 	GtkWidget *hbox, *field;
-	char *expr;
+	char *name, *expr;
 
 	if (!table->vars || table->vars->next)
 		return;
@@ -811,8 +824,11 @@ static void build_assignment(GtkWidget *vbox, struct frame *frame,
 	hbox = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
-	field = label_in_box_new(table->vars->name,
-	    "Variable name. Click to edit.");
+	name = stralloc_printf("%s%s", table->vars->key ? "?" : "",
+	    table->vars->name);
+	field = label_in_box_new(name, "Variable name. Click to edit.");
+	free(name);
+
 	gtk_box_pack_start(GTK_BOX(hbox), box_of_label(field), FALSE, FALSE, 0);
 	label_in_box_bg(field, COLOR_VAR_PASSIVE);
 	table->vars->widget = field;
@@ -988,7 +1004,7 @@ static void build_table(GtkWidget *vbox, struct frame *frame,
 	struct value *value;
 	int n_vars = 0, n_rows = 0;
 	int n_var, n_row, pos;
-	char *expr;
+	char *name, *expr;
 	GdkColor color;
 
 	for (var = table->vars; var; var = var->next)
@@ -1021,9 +1037,12 @@ static void build_table(GtkWidget *vbox, struct frame *frame,
 			gtk_table_set_row_spacings(GTK_TABLE(tab), 1);
 			gtk_table_set_col_spacings(GTK_TABLE(tab), 1);
 		}
-	
-		field = label_in_box_new(var->name,
+
+		name = stralloc_printf("%s%s", var->key ? "?" : "", var->name);
+		field = label_in_box_new(name,
 		    "Variable (column) name. Click to edit.");
+		free(name);
+
 		gtk_table_attach_defaults(GTK_TABLE(tab), box_of_label(field),
 		    n_vars, n_vars+1, 0, 1);
 		label_in_box_bg(field, COLOR_VAR_PASSIVE);
@@ -1102,7 +1121,6 @@ static void build_table(GtkWidget *vbox, struct frame *frame,
 		n_var++;
 		n_vars++;
 	}
-	
 }
 
 
@@ -1520,6 +1538,34 @@ static void unselect_pkg_name(void *data)
 }
 
 
+static gboolean pkg_scroll_event(GtkWidget *widget, GdkEventScroll *event,
+    gpointer data)
+{
+	struct pkg *pkg, *last;
+
+	switch (event->direction) {
+	case GDK_SCROLL_UP:
+		if (active_pkg->next)
+			active_pkg = active_pkg->next;
+		else
+			active_pkg = pkgs->next;
+		change_world();
+		break;
+	case GDK_SCROLL_DOWN:
+		last = NULL;
+		for (pkg = pkgs->next; pkg && (!last || pkg != active_pkg);
+		    pkg = pkg->next)
+			last = pkg;
+		active_pkg = last;
+		change_world();
+		break;
+	default:
+		/* ignore */;
+	}
+	return TRUE;
+}
+
+
 static gboolean pkg_name_edit_event(GtkWidget *widget, GdkEventButton *event,
     gpointer data)
 {
@@ -1551,40 +1597,14 @@ static GtkWidget *build_pkg_name(void)
 
 	g_signal_connect(G_OBJECT(box_of_label(label)),
 	    "button_press_event", G_CALLBACK(pkg_name_edit_event), NULL);
+	g_signal_connect(G_OBJECT(box_of_label(label)),
+	    "scroll_event", G_CALLBACK(pkg_scroll_event), NULL);
 
 	return box_of_label(label);
 }
 
 
 /* ----- packages ---------------------------------------------------------- */
-
-
-static gboolean pkg_scroll_event(GtkWidget *widget, GdkEventScroll *event,
-    gpointer data)
-{
-	struct pkg *pkg, *last;
-
-	switch (event->direction) {
-	case GDK_SCROLL_UP:
-		if (active_pkg->next)
-			active_pkg = active_pkg->next;
-		else
-			active_pkg = pkgs->next;
-		change_world();
-		break;
-	case GDK_SCROLL_DOWN:
-		last = NULL;
-		for (pkg = pkgs->next; pkg && (!last || pkg != active_pkg);
-		    pkg = pkg->next)
-			last = pkg;
-		active_pkg = last;
-		change_world();
-		break;
-	default:
-		/* ignore */;
-	}
-	return TRUE;
-}
 
 
 static gboolean pkg_select_event(GtkWidget *widget, GdkEventButton *event,
@@ -1701,9 +1721,9 @@ static gboolean frame_release_event(GtkWidget *widget, GdkEventButton *event,
 	case 1:
 		if (is_dragging(frame))
 			return FALSE;
-		if (active_frame != frame)
+		if (active_frame != frame) {
 			select_frame(frame);
-		else {
+		} else {
 			if (active_frame->name) {
 				edit_nothing();
 				edit_frame(frame);

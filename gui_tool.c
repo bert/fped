@@ -1,8 +1,8 @@
 /*
  * gui_tool.c - GUI, tool bar
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ static struct vec *new_vec(struct inst *base)
 	struct vec *vec, **walk;
 
 	vec = alloc_type(struct vec);
+	vec->nul_tag = 0;
 	vec->name = NULL;
 	vec->base = inst_get_vec(base);
 	vec->next = NULL;
@@ -555,9 +556,9 @@ struct pix_buf *draw_move_arc(struct inst *inst, struct coord pos, int i)
 	if (a2 < a1)
 		a2 += 360.0;
 
-	if (i != 2)
+	if (i != 2) {
 		r_save = r;
-	else {
+	} else {
 		r_save = hypot(to.x-c.x, to.y-c.y);
 		if (r > r_save)
 			r_save = r;
@@ -1024,9 +1025,9 @@ int tool_end_drag(struct coord to)
 	tool_cancel_drag();
 	if (state.new && ops->end_new_raw)
 		return ops->end_new_raw(state.new, to);
-	if (state.new && ops->find_point)
+	if (state.new && ops->find_point) {
 		end = ops->find_point(to);
-	else {
+	} else {
 		if (state.inst && state.inst->ops->find_point)
 			end = state.inst->ops->find_point(state.inst, to);
 		else

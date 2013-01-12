@@ -1,8 +1,8 @@
 /*
  * postscript.c - Dump objects in Postscript
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 
 #include "util.h"
@@ -88,19 +89,27 @@
 #define	PS_CROSS_WIDTH		mm_to_units(0.01)
 #define	PS_CROSS_DASH		mm_to_units(0.1)
 
+#define	PS_KEY_X_GAP		mm_to_units(8)
+#define	PS_KEY_Y_GAP		mm_to_units(4)
+#define	PS_KEY_HEIGTH		mm_to_units(8)
+
 #define TEXT_HEIGHT_FACTOR	1.5	/* height/width of typical text */
 
 
 struct postscript_params postscript_params = {
 	.zoom		= 0,
+	.max_width	= 0,
+	.max_height	= 0,
 	.show_pad_names	= 1,
 	.show_stuff	= 0,
 	.label_vecs	= 0,
 	.show_meas	= 1,
+	.show_key	= 0,
 };
 
 static const struct postscript_params minimal_params;
 static struct postscript_params active_params;
+static int pad_type_seen[pt_n];
 
 
 /* ----- Boxes ------------------------------------------------------------- */
@@ -187,18 +196,26 @@ static void ps_string(FILE *file, const char *s)
 }
 
 
-/* ----- Items ------------------------------------------------------------- */
-
-
-static void ps_pad_name(FILE *file, const struct inst *inst)
+static void ps_filled_box(FILE *file, struct coord a, struct coord b,
+    const char *pattern)
 {
-	struct coord a = inst->base;
-	struct coord b = inst->u.pad.other;
-	const char *s;
+	fprintf(file, "0 setgray %d setlinewidth\n", PS_HATCH_LINE);
+	fprintf(file, "  %d %d moveto\n", a.x, a.y);
+	fprintf(file, "  %d %d lineto\n", b.x, a.y);
+	fprintf(file, "  %d %d lineto\n", b.x, b.y);
+	fprintf(file, "  %d %d lineto\n", a.x, b.y);
+	fprintf(file, "  closepath gsave %s grestore stroke\n", pattern);
+}
+
+
+static void ps_outlined_text_in_rect(FILE *file, const char *s,
+    struct coord a, struct coord b)
+{
+	const char *t;
 	unit_type h, w;
 
-	for (s = inst->u.pad.name; *s == ' '; s++);
-	if (!*s)
+	for (t = s; *t == ' '; t++);
+	if (!*t)
 		return;
 	h = a.y-b.y;
 	w = a.x-b.x;
@@ -208,19 +225,29 @@ static void ps_pad_name(FILE *file, const struct inst *inst)
 		w = -w;
 	fprintf(file, "0 setgray /Helvetica-Bold findfont dup\n");
 	fprintf(file, "   ");
-	ps_string(file, inst->u.pad.name);
+	ps_string(file, s);
 	fprintf(file, " %d %d\n", w/2, h/2);
 	fprintf(file, "   boxfont\n");
 	fprintf(file, "   %d %d moveto\n", (a.x+b.x)/2, (a.y+b.y)/2);
 	fprintf(file, "   ");
-	ps_string(file, inst->u.pad.name);
+	ps_string(file, s);
 	fprintf(file, " center %d showoutlined newpath\n", PS_FONT_OUTLINE);
 }
 
 
-static const char *hatch(layer_type layers)
+/* ----- Items ------------------------------------------------------------- */
+
+
+static void ps_pad_name(FILE *file, const struct inst *inst)
 {
-	switch (layers_to_pad_type(layers)) {
+	ps_outlined_text_in_rect(file, inst->u.pad.name,
+	    inst->base, inst->u.pad.other);
+}
+
+
+static const char *hatch(enum pad_type type)
+{
+	switch (type) {
 	case pt_normal:
 		return "crosspath";
 	case pt_bare:
@@ -239,16 +266,10 @@ static const char *hatch(layer_type layers)
 
 static void ps_pad(FILE *file, const struct inst *inst, int show_name)
 {
-	struct coord a = inst->base;
-	struct coord b = inst->u.pad.other;
+	enum pad_type type = layers_to_pad_type(inst->u.pad.layers);
 
-	fprintf(file, "0 setgray %d setlinewidth\n", PS_HATCH_LINE);
-	fprintf(file, "  %d %d moveto\n", a.x, a.y);
-	fprintf(file, "  %d %d lineto\n", b.x, a.y);
-	fprintf(file, "  %d %d lineto\n", b.x, b.y);
-	fprintf(file, "  %d %d lineto\n", a.x, b.y);
-	fprintf(file, "  closepath gsave %s grestore stroke\n",
-	    hatch(inst->u.pad.layers));
+	pad_type_seen[type] = 1;
+	ps_filled_box(file, inst->base, inst->u.pad.other, hatch(type));
 
 	if (show_name && !inst->u.pad.hole)
 		ps_pad_name(file, inst);
@@ -281,10 +302,13 @@ static void ps_rounded_rect(FILE *file, struct coord a, struct coord b)
 
 static void ps_rpad(FILE *file, const struct inst *inst, int show_name)
 {
+	enum pad_type type = layers_to_pad_type(inst->u.pad.layers);
+
+	pad_type_seen[type] = 1;
+
 	fprintf(file, "0 setgray %d setlinewidth\n", PS_HATCH_LINE);
 	ps_rounded_rect(file, inst->base, inst->u.pad.other);
-	fprintf(file, "  closepath gsave %s grestore stroke\n",
-	    hatch(inst->u.pad.layers));
+	fprintf(file, "  closepath gsave %s grestore stroke\n", hatch(type));
 
 	if (show_name && !inst->u.pad.hole)
 		ps_pad_name(file, inst);
@@ -577,13 +601,15 @@ static void ps_cross(FILE *file, const struct inst *inst)
 }
 
 
-static void ps_draw_package(FILE *file, const struct pkg *pkg, double zoom)
+static void ps_draw_package(FILE *file, const struct pkg *pkg, double zoom,
+    int cross)
 {
 	enum inst_prio prio;
 	const struct inst *inst;
 
 	fprintf(file, "gsave %f dup scale\n", zoom);
-	ps_cross(file, pkgs->insts[ip_frame]);
+	if (cross)
+		ps_cross(file, pkgs->insts[ip_frame]);
 	FOR_INST_PRIOS_UP(prio) {
 		FOR_PKG_INSTS(pkgs, prio, inst)
 			ps_background(file, prio, inst);
@@ -652,7 +678,7 @@ static int generate_frames(FILE *file, const struct pkg *pkg,
 	 * quantitative one, emphasizing the logical structure of the drawing
 	 * and not the actual sizes.
 	 *
- 	 * This could be done by ranking vectors by current, average, maximum,
+	 * This could be done by ranking vectors by current, average, maximum,
 	 * etc. size, then let their size be determined by the amount of text
 	 * that's needed and the size of subordinate vectors. One difficulty
 	 * would be in making vectors with a fixed length ratio look correct,
@@ -792,6 +818,43 @@ static void ps_unit(FILE *file,
 }
 
 
+static void ps_key(FILE *file, double w, double h, enum pad_type type)
+{
+	char tmp[20]; /* @@@ plenty :) */
+	double f = 32;
+	struct coord a, b;
+	unit_type key_w;
+
+	key_w = (w-2*PS_KEY_X_GAP-PS_KEY_X_GAP*(pt_n-1))/pt_n;
+	a.x = b.x = (key_w+PS_KEY_X_GAP)*type-w/2+PS_KEY_X_GAP;
+	a.y = b.y = -h/2-PS_KEY_Y_GAP;
+	b.x += key_w;
+	b.y -= PS_KEY_HEIGTH;
+
+	a.x /= f;
+	a.y /= f;
+	b.x /= f;
+	b.y /= f;
+
+	strcpy(tmp, pad_type_name(type));
+	tmp[0] = toupper(tmp[0]);
+	fprintf(file, "gsave %f %f scale\n", f, f);
+	ps_filled_box(file, a, b, hatch(type));
+	ps_outlined_text_in_rect(file, tmp, a, b);
+	fprintf(file, "grestore\n");
+}
+
+
+static void ps_keys(FILE *file, double w, double h)
+{
+	enum pad_type i;
+
+	for (i = 0; i != pt_n; i++)
+		if (pad_type_seen[i])
+			ps_key(file, w, h, i);
+}
+
+
 static void ps_package(FILE *file, const struct pkg *pkg, int page)
 {
 	struct bbox bbox;
@@ -807,7 +870,7 @@ static void ps_package(FILE *file, const struct pkg *pkg, int page)
 	x = 2*PAGE_HALF_WIDTH-2*PS_DIVIDER_BORDER;
 	y = PAGE_HALF_HEIGHT-PS_HEADER_HEIGHT-3*PS_DIVIDER_BORDER;
 
-	bbox = inst_get_bbox();
+	bbox = inst_get_bbox(pkg);
 	w = 2*(-bbox.min.x > bbox.max.x ? -bbox.min.x : bbox.max.x);
 	h = 2*(-bbox.min.y > bbox.max.y ? -bbox.min.y : bbox.max.y);
 
@@ -837,7 +900,7 @@ static void ps_package(FILE *file, const struct pkg *pkg, int page)
 		/* main drawing */
 		fprintf(file, "gsave %d %d translate\n",
 		    (int) (x/(f+2)*f/2)-PAGE_HALF_WIDTH, c);
-		ps_draw_package(file, pkg, f);
+		ps_draw_package(file, pkg, f, 1);
 
 		active_params = minimal_params;
 
@@ -851,17 +914,17 @@ static void ps_package(FILE *file, const struct pkg *pkg, int page)
 		/* x1 package */
 		fprintf(file, "grestore gsave %d %d translate\n",
 		    (d+PAGE_HALF_WIDTH)/2, y/6*5+PS_DIVIDER_BORDER);
-		ps_draw_package(file, pkg, 1);
+		ps_draw_package(file, pkg, 1, 1);
 
 		/* x2 package */
 		fprintf(file, "grestore gsave %d %d translate\n",
 		    (d+PAGE_HALF_WIDTH)/2, y/3+PS_DIVIDER_BORDER);
-		ps_draw_package(file, pkg, 2);
+		ps_draw_package(file, pkg, 2, 1);
 	} else if (x/(f+1) >= w && y/2 > h) {
 		/* main drawing */
 		fprintf(file, "gsave %d %d translate\n",
 		    (int) (x/(f+1)*f/2)-PAGE_HALF_WIDTH, c);
-		ps_draw_package(file, pkg, f);
+		ps_draw_package(file, pkg, f, 1);
 
 		active_params = minimal_params;
 
@@ -875,10 +938,10 @@ static void ps_package(FILE *file, const struct pkg *pkg, int page)
 		/* x1 package */
 		fprintf(file, "grestore gsave %d %d translate\n",
 		    (d+PAGE_HALF_WIDTH)/2, c);
-		ps_draw_package(file, pkg, 1);
+		ps_draw_package(file, pkg, 1, 1);
 	} else {
 		fprintf(file, "gsave 0 %d translate\n", c);
-		ps_draw_package(file, pkg, f);
+		ps_draw_package(file, pkg, f, 1);
 	}
 	fprintf(file, "grestore\n");
 
@@ -1030,7 +1093,7 @@ fprintf(file,
 
 	fprintf(file,
 "/showoutlined {\n"
-"    gsave 2 mul setlinewidth 1 setgray\n"
+"    gsave 2 mul setlinewidth 1 setgray 1 setlinejoin\n"
 "    dup false charpath flattenpath stroke grestore\n"
 "    show } def\n");
 
@@ -1088,7 +1151,7 @@ static int ps_for_all_pkg(FILE *file,
     const char *one)
 {
 	struct pkg *pkg;
-	int pages;
+	int pages = 0;
 
 	for (pkg = pkgs; pkg; pkg = pkg->next)
 		if (pkg->name)
@@ -1127,21 +1190,40 @@ static void ps_package_fullpage(FILE *file, const struct pkg *pkg, int page)
 	unit_type cx, cy;
 	struct bbox bbox;
 	double fx, fy, f;
+	double w = 2.0*PAGE_HALF_WIDTH;
+	double h = 2.0*PAGE_HALF_HEIGHT;
+	int yoff = 0;
 
 	ps_page(file, page, pkg);
 	active_params = postscript_params;
-	bbox = inst_get_bbox();
+	bbox = inst_get_bbox(pkg);
 	cx = (bbox.min.x+bbox.max.x)/2;
 	cy = (bbox.min.y+bbox.max.y)/2;
-	if (active_params.zoom)
+	if (active_params.zoom) {
 		f = active_params.zoom;
-	else {
-		fx = 2.0*PAGE_HALF_WIDTH/(bbox.max.x-bbox.min.x);
-		fy = 2.0*PAGE_HALF_HEIGHT/(bbox.max.y-bbox.min.y);
+	} else {
+		if (active_params.max_width)
+			w = active_params.max_width;
+		fx = w/(bbox.max.x-bbox.min.x);
+		if (active_params.max_height)
+			h = active_params.max_height;
+		if (active_params.show_key) {
+			yoff = PS_KEY_HEIGTH+PS_KEY_Y_GAP;
+			h -= yoff;
+		}
+		fy = h/(bbox.max.y-bbox.min.y);
 		f = fx < fy ? fx : fy;
 	}
-	fprintf(file, "%d %d translate\n", (int) (-cx*f), (int) (-cy*f));
-	ps_draw_package(file, pkg, f);
+	fprintf(file, "gsave\n");
+	fprintf(file, "%d %d translate\n", (int) (-cx*f), (int) (-cy*f)+yoff);
+	memset(pad_type_seen, 0, sizeof(pad_type_seen));
+	ps_draw_package(file, pkg, f, 0);
+	fprintf(file, "grestore\n");
+	if (active_params.show_key) {
+		fprintf(file, "gsave 0 %d translate\n", yoff);
+		ps_keys(file, w, h);
+		fprintf(file, "grestore\n");
+	}
 	fprintf(file, "showpage\n");
 }
 

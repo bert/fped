@@ -177,7 +177,14 @@ allow overlap
 Do not check for overlaps at all.
 
 If the "allow" directive is omitted, fped defaults to allowing
-neigher overlap nor touch.
+neither overlap nor touch.
+
+There is also the following experimental directive that can be used
+alone or without one of the overlap-checking directives:
+
+allow holes
+
+Allow multiple holes per pad.
 
 
 Vectors
@@ -503,13 +510,28 @@ table
 
 (x, y) assume the values (1, 2) and (3, 4).
 
+Tables can also be used to provide information that depends on
+other variables. The value of such a variable acts as a key, and a
+row is only selected if all the keys in that row match the
+respective variables. To mark a variable as being used as key, its
+name it prefixed with a question mark.
+
+Example:
+
+loop n = 1, 2, 3
+table
+    { ?n, name }
+    { 1, "one" }
+    { 2, "two" }
+    { 3, "three" }
+
 
 Expressions
 -----------
 
 Expressions can contain numeric constants (in non-exponential notation),
 variable names, the arithmetic operations +, -, *, /, unary -, and the
-functions sin(), cos(), and sqrt().
+functions sin(), cos(), sqrt(), and floor().
 
 Parentheses can be used to change precedence.
 
@@ -519,6 +541,10 @@ angle in degrees. E.g., sin(90) yields 1.
 The argument of sqrt() can be dimensionless or have a dimension with an
 exponent that's a multiple of two. E.g., sqrt(2) and sqrt(2mm*3mm) are
 valid expressions, sqrt(2mm) isn't.
+
+The function floor() returns the next integer that is below or equal to
+the argument. If the argument has a dimension, that dimension is
+preserved. E.g., floor(-1.2) returns -2, floor(4.7mm) returns 4mm.
 
 
 GUI
@@ -680,6 +706,7 @@ most of which mimick the effect of GUI operations:
 %move <identifier> [<number>] <identifier>
 %frame <identifier> <qualified-base>
 %print <expression>
+%iprint <expression>
 %meas <identifier>
 %dump
 %exit
@@ -711,7 +738,15 @@ parent frame's origin can be references as "@".
 %dump writes the footprint definition in the fped language to standard
 output. %exit immediately exits fped, without invoking the GUI.
 
-%print evaluates the expression and prints the result to standard output.
+%print and %iprint evaluate the expression and print the result to
+standard output. The difference between them is that %print runs only
+once and without explicit instantiation, while %iprint is treated as
+a regular object and is executed as many times as instantiation
+demands.
+
+For example, after  loop x = 1, 3  we would obtain just 1 with %print
+while %iprint would display, 1, 2, and 3.
+
 %meas performs an instantiation and prints the value of the labeled
 measurement.
 

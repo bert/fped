@@ -1,8 +1,8 @@
 /*
  * gui_canvas.c - GUI, canvas
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ static void center(const struct bbox *this_bbox)
 {
 	struct bbox bbox;
 
-	bbox = this_bbox ? *this_bbox : inst_get_bbox();
+	bbox = this_bbox ? *this_bbox : inst_get_bbox(NULL);
 	draw_ctx.center.x = (bbox.min.x+bbox.max.x)/2;
 	draw_ctx.center.y = (bbox.min.y+bbox.max.y)/2;
 }
@@ -107,7 +107,7 @@ static void auto_scale(const struct bbox *this_bbox)
 	int sx, sy;
 	float aw, ah;
 
-	bbox = this_bbox ? *this_bbox : inst_get_bbox();
+	bbox = this_bbox ? *this_bbox : inst_get_bbox(NULL);
 	aw = draw_ctx.widget->allocation.width;
 	ah = draw_ctx.widget->allocation.height;
 	h = bbox.max.x-bbox.min.x;
@@ -332,7 +332,7 @@ static void zoom_out(struct coord pos)
 {
 	struct bbox bbox;
 
-	bbox = inst_get_bbox();
+	bbox = inst_get_bbox(NULL);
 	bbox.min = translate(bbox.min);
 	bbox.max = translate(bbox.max);
 	if (bbox.min.x >= ZOOM_STOP_BORDER &&

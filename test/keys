@@ -1,0 +1,134 @@
+#!/bin/sh
+. ./Common
+
+###############################################################################
+
+fped "keys: tables, master before slave" <<EOF
+table { a, eng } { 1, "one" } { 2, "two" }
+table { ?a, ger } { 1, "eins" } { 2, "zwei" }
+
+%iprint eng
+%iprint ger
+EOF
+expect <<EOF
+one
+eins
+two
+zwei
+EOF
+
+#------------------------------------------------------------------------------
+
+fped "keys: tables, master after slave" <<EOF
+table { ?a, eng } { 1, "one" } { 2, "two" }
+table { a, spa } { 1, "uno" } { 2, "dos" }
+
+%iprint eng
+%iprint spa
+EOF
+expect <<EOF
+one
+uno
+two
+dos
+EOF
+
+#------------------------------------------------------------------------------
+
+fped_fail "keys: tables, slaves without master" <<EOF
+table { ?a, eng } { 1, "one" } { 2, "two" }
+table { ?a, lat } { 1, "unum" } { 2, "duo" }
+
+%iprint eng
+%iprint lat
+EOF
+expect <<EOF
+undefined variable "a"
+EOF
+
+#------------------------------------------------------------------------------
+
+fped_fail "keys: tables, both masters" <<EOF
+table { a, eng } { 1, "one" } { 2, "two" }
+table { a, lat } { 1, "unum" } { 2, "duo" }
+
+%iprint eng
+%iprint lat
+EOF
+expect <<EOF
+2: duplicate variable "a" near "a"
+EOF
+
+#------------------------------------------------------------------------------
+
+fped "keys: master is single variable, slave is table" <<EOF
+set n = 2
+table { ?n, square } { 1, 1 } { 2, 4 } { 3, 9 } { 4, 16 }
+
+%iprint square
+EOF
+expect <<EOF
+4
+EOF
+
+#------------------------------------------------------------------------------
+
+fped "keys: master is table, slave is single variable" <<EOF
+table { n, cube } { 1, 1 } { 2, 8 } { 3, 27 } { 4, 64 }
+set ?n = 3
+
+%iprint cube
+EOF
+expect <<EOF
+27
+EOF
+
+#------------------------------------------------------------------------------
+
+fped "keys: master is loop, slave is table" <<EOF
+loop n = 1, 3
+table { ?n, sqr } { 1, 1 } { 2, 4 } { 3, 9 } { 4, 16 }
+
+%iprint sqr
+EOF
+expect <<EOF
+1
+4
+9
+EOF
+
+#------------------------------------------------------------------------------
+
+fped "keys: two keys" <<EOF
+table { a, an } { 1, "one" } { 2, "two" }
+table { b, bn } { 3, "three" } { 4, "four" } { 5, "five" }
+table { ?a, ?b, sum }
+  { 1, 3, "four" }
+  { 2, 4, "six" }
+  { 3, 4, "seven" }
+
+%iprint sum
+EOF
+expect <<EOF
+four
+six
+EOF
+
+#------------------------------------------------------------------------------
+
+fped "keys: key set by outer frame" <<EOF
+frame tab {
+	table { sqrt, ?n } { 1, 1 } { 2, 4 } { 3, 9 } { 4, 16 } { 5, 25 }
+	%iprint sqrt
+}
+
+table { n } { 25 } { 9 }
+
+frame tab @
+EOF
+expect <<EOF
+5
+3
+EOF
+
+###############################################################################

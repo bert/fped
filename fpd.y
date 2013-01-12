@@ -2,8 +2,8 @@
 /*
  * fpd.y - FootPrint Definition language
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ static struct obj **next_obj;
 
 static int n_vars, n_values;
 
-static const char *id_sin, *id_cos, *id_sqrt;
+static const char *id_sin, *id_cos, *id_sqrt, *id_floor;
 
 static struct tsort *tsort;
 
@@ -107,7 +107,7 @@ static struct var *find_var(const struct frame *frame, const char *name)
 
 	for (table = frame->tables; table; table = table->next)
 		for (var = table->vars; var; var = var->next)
-			if (var->name == name)
+			if (!var->key && var->name == name)
 				return var;
 	for (loop = frame->loops; loop; loop = loop->next)
 		if (loop->var.name == name)
@@ -130,7 +130,7 @@ static void set_frame(struct frame *frame)
 }
 
 
-static void make_var(const char *id, struct expr *expr)
+static void make_var(const char *id, int key, struct expr *expr)
 {
 	struct table *table;
 
@@ -139,6 +139,7 @@ static void make_var(const char *id, struct expr *expr)
 	table->vars->name = id;
 	table->vars->frame = curr_frame;
 	table->vars->table = table;
+	table->vars->key = key;
 	table->rows = zalloc_type(struct row);
 	table->rows->table = table;
 	table->rows->values = zalloc_type(struct value);
@@ -252,9 +253,9 @@ static int dbg_delete(const char *frame_name, const char *name)
 	struct obj *obj;
 	struct frame *frame;
 
-	if (!frame_name)
+	if (!frame_name) {
 		frame = curr_frame;
-	else {
+	} else {
 		frame = find_frame(frame_name);
 		if (!frame) {
 			yyerrorf("unknown frame \"%s\"", frame_name);
@@ -365,17 +366,17 @@ static int dbg_link_frame(const char *frame_name,
 }
 
 
-static int dbg_print(const struct expr *expr)
+int dbg_print(const struct expr *expr, const struct frame *frame)
 {
 	const char *s;
 	struct num num;
 
-	s = eval_str(expr, curr_frame);
+	s = eval_str(expr, frame);
 	if (s) {
 		printf("%s\n", s);
 		return 1;
 	}
-	num = eval_num(expr, curr_frame);
+	num = eval_num(expr, frame);
 	if (is_undef(num))
 		return 0;
 	printf("%lg%s\n", num.n, str_unit(num));
@@ -425,6 +426,7 @@ static int dbg_meas(const char *name)
 
 %union {
 	struct num num;
+	int flag;
 	char *str;
 	const char *id;
 	struct expr *expr;
@@ -457,9 +459,10 @@ static int dbg_meas(const char *name)
 %token		TOK_PAD TOK_RPAD TOK_HOLE TOK_RECT TOK_LINE TOK_CIRC TOK_ARC
 %token		TOK_MEAS TOK_MEASX TOK_MEASY TOK_UNIT
 %token		TOK_NEXT TOK_NEXT_INVERTED TOK_MAX TOK_MAX_INVERTED
-%token		TOK_DBG_DEL TOK_DBG_MOVE TOK_DBG_FRAME TOK_DBG_PRINT
+%token		TOK_DBG_DEL TOK_DBG_MOVE TOK_DBG_FRAME
+%token		TOK_DBG_PRINT TOK_DBG_IPRINT
 %token		TOK_DBG_DUMP TOK_DBG_EXIT TOK_DBG_TSORT TOK_DBG_MEAS
-%token		TOK_ALLOW_OVERLAP TOK_ALLOW_TOUCH
+%token		TOK_ALLOW_HOLES TOK_ALLOW_OVERLAP TOK_ALLOW_TOUCH
 
 %token	<num>	NUMBER
 %token	<str>	STRING
@@ -473,6 +476,7 @@ static int dbg_meas(const char *name)
 %type	<obj>	object obj meas unlabeled_meas
 %type	<expr>	expr opt_expr add_expr mult_expr unary_expr primary_expr
 %type	<num>	opt_num
+%type	<flag>	opt_key
 %type	<frame>	frame_qualifier
 %type	<str>	opt_string
 %type	<pt>	pad_type
@@ -491,6 +495,7 @@ all:
 			id_sin = unique("sin");
 			id_cos = unique("cos");
 			id_sqrt = unique("sqrt");
+			id_floor = unique("floor");
 		}
 	    fpd
 	| START_EXPR expr
@@ -539,9 +544,16 @@ opt_setup:
 
 setup:
 	unit
-	| allow
-	| unit allow
-	| allow unit
+	| allow_pads
+	| allow_holes
+	| unit allow_pads
+	| unit allow_pads allow_holes
+	| unit allow_holes
+	| unit allow_holes allow_pads
+	| allow_pads unit
+	| allow_pads unit allow_holes
+	| allow_holes unit
+	| allow_holes unit allow_pads
 	;
 
 unit:
@@ -560,7 +572,7 @@ unit:
 		}
 	;
 
-allow:
+allow_pads:
 	TOK_ALLOW_TOUCH
 		{
 			allow_overlap = ao_touch;
@@ -568,6 +580,13 @@ allow:
 	| TOK_ALLOW_OVERLAP
 		{
 			allow_overlap = ao_any;
+		}
+	;
+
+allow_holes:
+	TOK_ALLOW_HOLES
+		{
+			holes_linked = 0;
 		}
 	;
 
@@ -605,13 +624,13 @@ frame_items:
 
 frame_item:
 	table
-	| TOK_SET ID '=' expr
+	| TOK_SET opt_key ID '=' expr
 		{
-			if (find_var(curr_frame, $2)) {
-				yyerrorf("duplicate variable \"%s\"", $2);
+			if (!$2 && find_var(curr_frame, $3)) {
+				yyerrorf("duplicate variable \"%s\"", $3);
 				YYABORT;
 			}
-			make_var($2, $4);
+			make_var($3, $2, $5);
 		}
 	| TOK_LOOP ID '=' expr ',' expr
 		{
@@ -665,7 +684,7 @@ debug_item:
 		}
 	| TOK_DBG_PRINT expr
 		{
-			if (!dbg_print($2))
+			if (!dbg_print($2, curr_frame))
 				YYABORT;
 		}
 	| TOK_DBG_MEAS ID
@@ -753,22 +772,32 @@ vars:
 	;
 
 var:
-	ID
+	opt_key ID
 		{
-			if (find_var(curr_frame, $1)) {
-				yyerrorf("duplicate variable \"%s\"", $1);
+			if (!$1 && find_var(curr_frame, $2)) {
+				yyerrorf("duplicate variable \"%s\"", $2);
 				YYABORT;
 			}
 			$$ = zalloc_type(struct var);
-			$$->name = $1;
+			$$->name = $2;
 			$$->frame = curr_frame;
 			$$->table = curr_table;
+			$$->key = $1;
 			$$->next = NULL;
 			n_vars++;
 		}
 	;
-	
-	
+
+opt_key:
+		{
+			$$ = 0;
+		}
+	| '?'
+		{
+			$$ = 1;
+		}
+	;
+
 rows:
 		{
 			$$ = NULL;
@@ -826,6 +855,7 @@ vec:
 	TOK_VEC base '(' expr ',' expr ')'
 		{
 			$$ = alloc_type(struct vec);
+			$$->nul_tag = 0;
 			$$->name = NULL;
 			$$->base = $2;
 			$$->x = $4;
@@ -854,10 +884,8 @@ base:
 	| ID
 		{
 			$$ = find_vec(curr_frame, $1);
-			if (!$$) {
-				yyerrorf("unknown vector \"%s\"", $1);
-				YYABORT;
-			}
+			if (!$$)
+				$$ = (struct vec *) $1;
 		}
 	;
 
@@ -959,8 +987,8 @@ obj:
 			$$->u.arc.end = $4;
 			$$->u.arc.width = $5;
 		}
-	| TOK_FRAME ID 
-		{ 
+	| TOK_FRAME ID
+		{
 		    $<num>$.n = lineno;
 		}
 		    base
@@ -975,6 +1003,12 @@ obj:
 			if (!$$->u.frame.ref->active_ref)
 				$$->u.frame.ref->active_ref = $$;
 			$$->u.frame.lineno = $<num>3.n;
+		}
+	| TOK_DBG_IPRINT expr
+		{
+			$$ = new_obj(ot_iprint);
+			$$->base = NULL;
+			$$->u.iprint.expr = $2;
 		}
 	;
 
@@ -1246,6 +1280,8 @@ primary_expr:
 				$$ = binary_op(op_cos, $3, NULL);
 			else if ($1 == id_sqrt)
 				$$ = binary_op(op_sqrt, $3, NULL);
+			else if ($1 == id_floor)
+				$$ = binary_op(op_floor, $3, NULL);
 			else {
 				yyerrorf("unknown function \"%s\"", $1);
 				YYABORT;

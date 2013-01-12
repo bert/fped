@@ -1,8 +1,8 @@
 /*
  * obj.c - Object definition model
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "overlap.h"
 #include "layer.h"
 #include "delete.h"
+#include "fpd.h"
 #include "obj.h"
 
 
@@ -39,6 +40,7 @@ struct frame *frames = NULL;
 struct frame *active_frame = NULL;
 void *instantiation_error = NULL;
 enum allow_overlap allow_overlap = ao_none;
+int holes_linked = 1;
 
 
 static struct bitset *frame_set; /* frames visited in "call chain" */
@@ -168,7 +170,43 @@ static struct num eval_unit_default(const struct expr *expr,
 }
 
 
-static int generate_vecs(struct frame *frame, struct coord base)
+static int recurse_vec(const char *name, const struct frame *frame,
+    struct coord *res)
+{
+	const struct vec *v;
+
+	if (!frame)
+		return 0;
+	for (v = frame->vecs; v; v = v->next)
+		if (v->name == name) {
+			*res = v->pos;
+			return 1;
+		}
+	return recurse_vec(name, frame->curr_parent, res);
+}
+
+
+static int resolve_vec(const struct vec *vec, struct coord base_pos,
+    const struct frame *frame, struct coord *res)
+{
+	const char *name = (const char *) vec;
+
+	if (!vec) {
+		*res = base_pos;
+		return 1;
+	}
+	if (!*name) {
+		*res = vec->pos;
+		return 1;
+	}
+	if (recurse_vec(name, frame->curr_parent, res))
+		return 1;
+	fail("unknown vector \"%s\"", name);
+	return 0;
+}
+
+
+static int generate_vecs(struct frame *frame, struct coord base_pos)
 {
 	struct coord vec_base;
 	struct vec *vec;
@@ -181,7 +219,8 @@ static int generate_vecs(struct frame *frame, struct coord base)
 		y = eval_unit(vec->y, frame);
 		if (is_undef(y))
 			goto error;
-		vec_base = vec->base ? vec->base->pos : base;
+		if (!resolve_vec(vec->base, base_pos, frame, &vec_base))
+			goto error;
 		vec->pos = vec_base;
 		vec->pos.x += x.n;
 		vec->pos.y += y.n;
@@ -197,66 +236,78 @@ error:
 }
 
 
-static int generate_objs(struct frame *frame, struct coord base, int active)
+static int generate_objs(struct frame *frame, struct coord base_pos,
+    int active)
 {
 	struct obj *obj;
 	char *name;
 	int ok;
 	struct num width, offset;
+	struct coord base, other, start, end;
 
-	for (obj = frame->objs; obj; obj = obj->next)
+	for (obj = frame->objs; obj; obj = obj->next) {
+		if (obj->type != ot_meas)
+			if (!resolve_vec(obj->base, base_pos, frame, &base))
+				goto error;
 		switch (obj->type) {
 		case ot_frame:
-			if (!generate_frame(obj->u.frame.ref,
-			    obj->base ? obj->base->pos : base, frame, obj,
+			if (!generate_frame(obj->u.frame.ref, base, frame, obj,
 			    active && obj->u.frame.ref->active_ref == obj))
 				return 0;
 			break;
 		case ot_line:
+			if (!resolve_vec(obj->u.line.other, base_pos, frame,
+			    &other))
+				goto error;
 			width = eval_unit_default(obj->u.line.width, frame,
 			    DEFAULT_SILK_WIDTH);
 			if (is_undef(width))
 				goto error;
-			if (!inst_line(obj, obj->base ? obj->base->pos : base,
-			    obj->u.line.other ? obj->u.line.other->pos : base,
-			    width.n))
+			if (!inst_line(obj, base, other, width.n))
 				goto error;
 			break;
 		case ot_rect:
+			if (!resolve_vec(obj->u.rect.other, base_pos, frame,
+			    &other))
+				goto error;
 			width = eval_unit_default(obj->u.rect.width, frame,
 			    DEFAULT_SILK_WIDTH);
 			if (is_undef(width))
 				goto error;
-			if (!inst_rect(obj, obj->base ? obj->base->pos : base,
-			    obj->u.rect.other ? obj->u.rect.other->pos : base,
-			    width.n))
+			if (!inst_rect(obj, base, other, width.n))
 				goto error;
 			break;
 		case ot_pad:
+			if (!resolve_vec(obj->u.pad.other, base_pos, frame,
+			    &other))
+				goto error;
 			name = expand(obj->u.pad.name, frame);
 			if (!name)
 				goto error;
-			ok = inst_pad(obj, name,
-			    obj->base ? obj->base->pos : base,
-			    obj->u.pad.other ? obj->u.pad.other->pos : base);
+			ok = inst_pad(obj, name, base, other);
 			free(name);
 			if (!ok)
 				goto error;
 			break;
 		case ot_hole:
-			if (!inst_hole(obj, obj->base ? obj->base->pos : base,
-			    obj->u.hole.other ? obj->u.hole.other->pos : base))
+			if (!resolve_vec(obj->u.hole.other, base_pos, frame,
+			    &other))
+				goto error;
+			if (!inst_hole(obj, base, other))
 				goto error;
 			break;
 		case ot_arc:
+			if (!resolve_vec(obj->u.arc.start, base_pos, frame,
+			    &start))
+				goto error;
+			if (!resolve_vec(obj->u.arc.end, base_pos, frame,
+			    &end))
+				goto error;
 			width = eval_unit_default(obj->u.arc.width, frame,
 			    DEFAULT_SILK_WIDTH);
 			if (is_undef(width))
 				goto error;
-			if (!inst_arc(obj, obj->base ? obj->base->pos : base,
-			    obj->u.arc.start ? obj->u.arc.start->pos : base,
-			    obj->u.arc.end ? obj->u.arc.end->pos : base,
-			    width.n))
+			if (!inst_arc(obj, base, start, end, width.n))
 				goto error;
 			break;
 		case ot_meas:
@@ -267,9 +318,13 @@ static int generate_objs(struct frame *frame, struct coord base, int active)
 				goto error;
 			inst_meas_hint(obj, offset.n);
 			break;
+		case ot_iprint:
+			dbg_print(obj->u.iprint.expr, frame);
+			break;
 		default:
 			abort();
 		}
+	}
 	return 1;
 
 error:
@@ -285,13 +340,38 @@ static int generate_items(struct frame *frame, struct coord base, int active)
 
 	if (frame == frames) {
 		s = expand(pkg_name, frame);
-		inst_select_pkg(s);
+		/* s is NULL if expansion failed */
+		inst_select_pkg(s ? s : "_", active);
 		free(s);
 	}
 	inst_begin_active(active && frame == active_frame);
 	ok = generate_vecs(frame, base) && generate_objs(frame, base, active);
 	inst_end_active();
 	return ok;
+}
+
+
+static int match_keys(struct frame *frame, struct coord base, int active)
+{
+	const struct table *table;
+	const struct var *var;
+	const struct value *value;
+	int res;
+
+	for (table = frame->tables; table; table = table->next) {
+		value = table->curr_row->values;
+		for (var = table->vars; var; var = var->next) {
+			if (var->key) {
+				res = var_eq(frame, var->name, value->expr);
+				if (!res)
+					return 1;
+				if (res < 0)
+					return 0;
+			}
+			value = value->next;
+		}
+	}
+	return generate_items(frame, base, active);
 }
 
 
@@ -303,7 +383,7 @@ static int run_loops(struct frame *frame, struct loop *loop,
 	int found_before, ok;
 
 	if (!loop)
-		return generate_items(frame, base, active);
+		return match_keys(frame, base, active);
 	from = eval_num(loop->from.expr, frame);
 	if (is_undef(from)) {
 		fail_expr(loop->from.expr);
@@ -498,7 +578,7 @@ int instantiate(void)
 	find_vec = NULL;
 	find_obj = NULL;
 	if (ok)
-		ok = link_holes();
+		ok = link_holes(holes_linked);
 	if (ok)
 		ok = refine_layers(allow_overlap);
 	if (ok)

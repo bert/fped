@@ -1,8 +1,8 @@
 /*
  * dump.c - Dump objects in the native FPD format
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -220,7 +220,8 @@ static void dump_var(FILE *file, const struct table *table,
 	char *s;
 
 	s = unparse(table->rows->values->expr);
-	fprintf(file, "%sset %s = %s\n\n", indent, table->vars->name, s);
+	fprintf(file, "%sset %s%s = %s\n\n", indent,
+	    table->vars->key ? "?" : "", table->vars->name, s);
 	free(s);
 }
 
@@ -240,8 +241,8 @@ static void dump_table(FILE *file, const struct table *table,
 	}
 	fprintf(file, "%stable\n%s    {", indent, indent);
 	for (var = table->vars; var; var = var->next)
-		fprintf(file, "%s %s", var == table->vars ? "" : ",",
-		    var->name);
+		fprintf(file, "%s %s%s", var == table->vars ? "" : ",",
+		    var->key ? "?" : "", var->name);
 	fprintf(file, " }\n");
 	for (row = table->rows; row; row = row->next) {
 		fprintf(file, "%s    {", indent);
@@ -296,8 +297,12 @@ static void generate_name(struct vec *base)
 
 static const char *base_name(struct vec *base, const struct vec *next)
 {
+	const char *name = (const char *) base;
+
 	if (!base)
 		return "@";
+	if (*name)
+		return name;
 	if (next && base->next == next)
 		return ".";
 	if (!base->name)
@@ -484,9 +489,8 @@ char *print_vec(const struct vec *vec)
 	y = unparse(vec->y);
 	if (vec->name)
 		s = stralloc_printf("vec %s(%s, %s)", base, x, y);
-	else {
+	else
 		s = stralloc_printf("vec %s(%s, %s)", base, x, y);
-	}
 	free(x);
 	free(y);
 	return s;
@@ -587,6 +591,8 @@ static void dump_allow(FILE *file)
 	default:
 		abort();
 	}
+	if (!holes_linked)
+		fprintf(file, "allow holes\n");
 }
 
 

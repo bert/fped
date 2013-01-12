@@ -112,7 +112,7 @@ struct coord sub_vec(struct coord a, struct coord b)
 
 struct coord neg_vec(struct coord v)
 {
-	v.x = -v.x; 
+	v.x = -v.x;
 	v.y = -v.y;
 	return v;
 }

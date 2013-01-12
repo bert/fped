@@ -1,8 +1,8 @@
 /*
  * gui_status.c - GUI, status area
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,11 @@
 #include "error.h"
 #include "unparse.h"
 #include "obj.h"
+#include "layer.h"
 #include "gui_util.h"
 #include "gui_style.h"
 #include "gui_canvas.h"
+#include "gui_frame.h"
 #include "gui.h"
 #include "gui_status.h"
 
@@ -173,7 +175,6 @@ void status_set_angle_xy(const char *tooltip, struct coord v)
 		status_set_angle(tooltip, "a = 0 deg");
 	else
 		status_set_angle(tooltip, "a = %3.1f deg", theta_vec(v));
-
 }
 
 
@@ -195,28 +196,7 @@ static GtkWidget *pad_type;
 
 static void show_pad_type(void)
 {
-	const char *s;
-
-	switch (*curr_pad_type) {
-	case pt_normal:
-		s = "normal";
-		break;
-	case pt_bare:
-		s = "bare";
-		break;
-	case pt_trace:
-		s = "trace";
-		break;
-	case pt_paste:
-		s = "paste";
-		break;
-	case pt_mask:
-		s = "mask";
-		break;
-	default:
-		abort();
-	}
-	gtk_label_set_text(GTK_LABEL(pad_type), s);
+	gtk_label_set_text(GTK_LABEL(pad_type), pad_type_name(*curr_pad_type));
 }
 
 
@@ -377,7 +357,7 @@ static struct edit_ops edit_ops_unique = {
 };
 
 
-void edit_unique(const char **s, int (*validate)(const char *s, void *ctx), 
+void edit_unique(const char **s, int (*validate)(const char *s, void *ctx),
     void *ctx, const char *tooltip)
 {
 	static struct edit_unique_ctx unique_ctx;
@@ -449,22 +429,30 @@ struct edit_unique_with_values_ctx {
 };
 
 
-static enum edit_status unique_with_values_status(const char *s, void *ctx)
+static int unique_with_values_check(const char *s,
+    const struct edit_unique_with_values_ctx *unique_ctx)
 {
-	const struct edit_unique_with_values_ctx *unique_ctx = ctx;
 	const char *id;
 	struct value *values;
 	int n;
 
-	if (!strcmp(s, *unique_ctx->s))
-		return es_unchanged;
 	status_begin_reporting();
 	n = parse_var(s, &id, &values, unique_ctx->max_values);
 	if (n < 0)
-		return es_bad;
+		return 0;
 	free_values(values, 0);
-	return !unique_ctx->validate ||
-	    unique_ctx->validate(id, unique_ctx->ctx) ? es_good : es_bad;
+	return unique_ctx->validate ?
+	    unique_ctx->validate(id, unique_ctx->ctx) : 0;
+}
+
+
+static enum edit_status unique_with_values_status(const char *s, void *ctx)
+{
+	const struct edit_unique_with_values_ctx *unique_ctx = ctx;
+
+	if (!strcmp(s, *unique_ctx->s))
+		return es_unchanged;
+	return unique_with_values_check(s, unique_ctx) ? es_good : es_bad;
 }
 
 
@@ -508,6 +496,76 @@ void edit_unique_with_values(const char **s,
 	unique_ctx.max_values = max_values;
 	setup_edit(status_entry, &edit_ops_unique_with_values, &unique_ctx,
 	    tooltip);
+}
+
+
+/* ----- variable type display and change ---------------------------------- */
+
+
+static struct var *curr_var;
+static GtkWidget *var_type;
+
+
+static void show_var_type(void)
+{
+	gtk_label_set_text(GTK_LABEL(var_type),
+	    curr_var->key ? "key" : "assign");
+}
+
+
+/*
+ * This is a bit of a layering violation. Note that we can't just try to
+ * activate the edit and see what happens, because unique_with_values_status
+ * would unconditionally accept the previous value, even if it is no longer
+ * acceptable after the type change.
+ */
+
+static int attempt_var_type_change(struct var *var)
+{
+	const struct edit_unique_with_values_ctx *ctx;
+	const char *s;
+
+	ctx = gtk_object_get_data(GTK_OBJECT(status_entry), "edit-ctx");
+	s = gtk_entry_get_text(GTK_ENTRY(status_entry));
+	var->key = !var->key;
+	if (unique_with_values_check(s, ctx))
+		return 1;
+	var->key = !var->key;
+	return 0;
+}
+
+
+static gboolean do_activate(void);
+
+
+static gboolean var_type_button_press_event(GtkWidget *widget,
+    GdkEventButton *event, gpointer data)
+{
+	switch (event->button) {
+	case 1:
+		if (!attempt_var_type_change(curr_var))
+			return TRUE;
+		/* commit edit and change_world() */
+		do_activate();
+		reselect_var(curr_var);
+		return TRUE;
+	}
+	return TRUE;
+}
+
+
+void edit_var_type(struct var *var)
+{
+	vacate_widget(status_box_x);
+	curr_var = var;
+	var_type = label_in_box_new(NULL, "Variable type. Click to cycle.");
+	gtk_container_add(GTK_CONTAINER(status_box_x), box_of_label(var_type));
+	label_in_box_bg(var_type, COLOR_SELECTOR);
+	g_signal_connect(G_OBJECT(box_of_label(var_type)),
+	    "button_press_event", G_CALLBACK(var_type_button_press_event),
+	    NULL);
+	show_var_type();
+	gtk_widget_show_all(status_box_x);
 }
 
 
@@ -795,8 +853,7 @@ static gboolean changed(GtkWidget *widget, GdkEventMotion *event,
 }
 
 
-static gboolean activate(GtkWidget *widget, GdkEventMotion *event,
-    gpointer data)
+static gboolean do_activate(void)
 {
 	GtkWidget *edit;
 	enum edit_status status;
@@ -823,6 +880,13 @@ static gboolean activate(GtkWidget *widget, GdkEventMotion *event,
 	inst_deselect();
 	change_world();
 	return TRUE;
+}
+
+
+static gboolean activate(GtkWidget *widget, GdkEventMotion *event,
+    gpointer data)
+{
+	return do_activate();
 }
 
 
@@ -1001,7 +1065,7 @@ void make_status_area(GtkWidget *vbox)
 	status_entry_y = add_entry(tab, 2, 1);
 
 	status_entry_x = gtk_widget_ref(make_entry());
-	
+
 	/* name and input */
 
 	status_name = add_label(tab, 1, 2);

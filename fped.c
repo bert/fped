@@ -1,8 +1,8 @@
 /*
  * fped.c - Footprint editor, main function
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,6 +64,21 @@ static void load_file(const char *name)
 }
 
 
+void reload(void)
+{
+	struct frame *old_frames;
+
+	/* @@@ this needs more work */
+	purge();
+	old_frames = frames;
+	scan_file();
+	load_file(save_file_name);
+	if (!instantiate())
+		frames = old_frames;
+	change_world();
+}
+
+
 static void usage(const char *name)
 {
 	fprintf(stderr,
@@ -73,16 +88,43 @@ static void usage(const char *name)
 "              write gnuplot output, then exit\n"
 "  -k          write KiCad output, then exit\n"
 "  -p          write Postscript output, then exit\n"
-"  -P [-s scale] [-1 package]\n"
+"  -P [-K] [-s scale] [-1 package]\n"
 "              write Postscript output (full page), then exit\n"
 "  -T          test mode. Load file, then exit\n"
 "  -T -T       test mode. Load file, dump to stdout, then exit\n\n"
 "Common options:\n"
 "  -1 name     output only the specified package\n"
+"  -K          show the pad type key\n"
 "  -s scale    scale factor for -P (default: auto-scale)\n"
+"  -s [width]x[heigth]\n"
+"              auto-scale to fit within specified box. Dimensions in mm.\n"
 "  cpp_option  -Idir, -Dname[=value], or -Uname\n"
     , name);
 	exit(1);
+}
+
+
+static int parse_scaling(const char *arg)
+{
+	const char *x;
+	char *end;
+
+	x = strchr(arg, 'x');
+	if (!x) {
+		postscript_params.zoom = strtod(arg, &end);
+		return !*end;
+	}
+	if (x != arg) {
+		postscript_params.max_width = mm_to_units(strtod(arg, &end));
+		if (*end != 'x')
+			return 0;
+	}
+	if (x[1]) {
+		postscript_params.max_height = mm_to_units(strtod(x+1, &end));
+		if (*end)
+			return 0;
+	}
+	return 1;
 }
 
 
@@ -101,13 +143,12 @@ int main(int argc, char **argv)
 	char *args[2];
 	int fake_argc;
 	char opt[] = "-?";
-	char *end;
 	int error;
 	int test_mode = 0;
 	const char *one = NULL;
 	int c;
 
-	while ((c = getopt(argc, argv, "1:gkps:D:I:PTU:")) != EOF)
+	while ((c = getopt(argc, argv, "1:gkps:D:I:KPTU:")) != EOF)
 		switch (c) {
 		case '1':
 			one = optarg;
@@ -132,11 +173,13 @@ int main(int argc, char **argv)
 				usage(*argv);
 			batch = batch_ps_fullpage;
 			break;
+		case 'K':
+			postscript_params.show_key = 1;
+			break;
 		case 's':
 			if (batch != batch_ps_fullpage)
 				usage(*argv);
-			postscript_params.zoom = strtod(optarg, &end);
-			if (*end)
+			if (!parse_scaling(optarg))
 				usage(*argv);
 			break;
 		case 'T':
@@ -156,6 +199,8 @@ int main(int argc, char **argv)
 
 	if (one && batch != batch_ps && batch != batch_ps_fullpage &&
 	    batch != batch_gnuplot)
+		usage(name);
+	if (postscript_params.show_key && batch != batch_ps_fullpage)
 		usage(name);
 
 	if (!batch) {
@@ -213,7 +258,8 @@ int main(int argc, char **argv)
 		write_gnuplot(one);
 		break;
 	case batch_test:
-		dump(stdout, NULL);
+		if (test_mode > 1)
+			dump(stdout, NULL);
 		break;
 	default:
 		abort();

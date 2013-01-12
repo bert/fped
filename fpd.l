@@ -2,8 +2,8 @@
 /*
  * fpd.l - FootPrint Definition language
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +24,7 @@
 #include "y.tab.h"
 
 
-int start_token = START_FPD;
-
+static int start_token = START_FPD;
 static int disable_keywords = 0;
 static int is_table = 0;
 
@@ -33,6 +32,12 @@ static int is_table = 0;
 void scan_empty(void)
 {
 	yy_scan_string("");
+}
+
+
+void scan_file(void)
+{
+	start_token = START_FPD;
 }
 
 
@@ -128,6 +133,7 @@ SP	[\t ]*
 <INITIAL>"allow"		BEGIN(ALLOW);
 <ALLOW>"overlap"		return TOK_ALLOW_OVERLAP;
 <ALLOW>"touch"			return TOK_ALLOW_TOUCH;
+<ALLOW>"holes"			return TOK_ALLOW_HOLES;
 
 <INITIAL>"%del"			{ BEGIN(NOKEYWORD);
 				  return TOK_DBG_DEL; }
@@ -137,6 +143,8 @@ SP	[\t ]*
 				  return TOK_DBG_FRAME; }
 <INITIAL>"%print"		{ BEGIN(NOKEYWORD);
 				  return TOK_DBG_PRINT; }
+<INITIAL>"%iprint"		{ BEGIN(NOKEYWORD);
+				  return TOK_DBG_IPRINT; }
 <INITIAL>"%meas"		{ BEGIN(NOKEYWORD);
 				  return TOK_DBG_MEAS; }
 <INITIAL>"%dump"		{ BEGIN(NOKEYWORD);
@@ -191,7 +199,7 @@ SP	[\t ]*
 
 ^#\ [0-9]+\ \"[^"]*\"(\ [0-9]+)*\n {
 				  if (!disable_keywords)
-				  	BEGIN(INITIAL);
+					BEGIN(INITIAL);
 				  lineno = strtol(yytext+2, NULL, 0); }
 
 .				return *yytext;

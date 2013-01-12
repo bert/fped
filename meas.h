@@ -45,7 +45,7 @@ struct meas {
 	/* low is obj->base */
 	struct vec *high;
 	struct expr *offset;
-		
+
 	/* frame qualifiers */
 	struct frame_qual *low_qual;
 	struct frame_qual *high_qual;

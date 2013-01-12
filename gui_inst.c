@@ -1,8 +1,8 @@
 /*
  * gui_inst.c - GUI, instance functions
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -79,9 +79,9 @@ static void draw_poly(GdkGC *gc, int fill,
 		gp[i].x = points[i].x;
 		gp[i].y = points[i].y;
 	}
-	if (fill)
+	if (fill) {
 		gdk_draw_polygon(DA, gc, fill, gp, n_points);
-	else {
+	} else {
 		gdk_draw_line(DA, gc, gp[0].x, gp[0].y, gp[1].x, gp[1].y);
 		gdk_draw_line(DA, gc, gp[1].x, gp[1].y, gp[2].x, gp[2].y);
 	}
@@ -359,10 +359,10 @@ static void draw_rounded_rect(GdkGC *gc, struct coord a, struct coord b,
 	if (h > w) {
 		r = w/2;
 		draw_arc(DA, gc, fill, min.x+r, max.y-r, r, 180, 0);
-		if (fill)
+		if (fill) {
 			gdk_draw_rectangle(DA, gc, fill,
 			    min.x, min.y+r, w, h-2*r);
-		else {
+		} else {
 			gdk_draw_line(DA, gc, min.x, min.y+r, min.x, max.y-r);
 			gdk_draw_line(DA, gc, max.x, min.y+r, max.x, max.y-r);
 		}
@@ -370,10 +370,10 @@ static void draw_rounded_rect(GdkGC *gc, struct coord a, struct coord b,
 	} else {
 		r = h/2;
 		draw_arc(DA, gc, fill, min.x+r, min.y+r, r, 90, 270);
-		if (fill)
+		if (fill) {
 			gdk_draw_rectangle(DA, gc, fill,
 			    min.x+r, min.y, w-2*r, h);
-		else {
+		} else {
 			gdk_draw_line(DA, gc, min.x+r, min.y, max.x-r, min.y);
 			gdk_draw_line(DA, gc, min.x+r, max.y, max.x-r, max.y);
 		}
@@ -561,7 +561,7 @@ char *format_len(const char *label, unit_type len, enum curr_unit unit)
 		abort();
 	}
 	return stralloc_printf(mm ?
-	    "%s" MM_FORMAT_SHORT "%s" : 
+	    "%s" MM_FORMAT_SHORT "%s" :
 	    "%s" MIL_FORMAT_SHORT "%s",
 	    label, n, u);
 }

@@ -1,8 +1,8 @@
 /*
  * delete.c - Object deletion
  *
- * Written 2009, 2010 by Werner Almesberger
- * Copyright 2009, 2010 by Werner Almesberger
+ * Written 2009, 2010, 2012 by Werner Almesberger
+ * Copyright 2009, 2010, 2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -143,6 +143,8 @@ static int obj_has_ref(const struct obj *obj, const struct vec *ref)
 		return obj->u.arc.start == ref || obj->u.arc.end == ref;
 	case ot_meas:
 		return obj->u.meas.high == ref;
+	case ot_iprint:
+		return 0;
 	default:
 		abort();
 	}
@@ -237,6 +239,9 @@ static void destroy_obj(struct obj *obj)
 			free(obj->u.meas.label);
 		if (obj->u.meas.offset)
 			free_expr(obj->u.meas.offset);
+		break;
+	case ot_iprint:
+		free_expr(obj->u.iprint.expr);
 		break;
 	default:
 		abort();

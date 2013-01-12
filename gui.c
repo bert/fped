@@ -1,8 +1,8 @@
 /*
  * gui.c - Editor GUI core
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ static void swap_var_code(void)
 
 
 static GtkItemFactoryEntry menu_entries[] = {
-	{ "/File",		NULL,	NULL,	 	0, "<Branch>" },
+	{ "/File",		NULL,	NULL,		0, "<Branch>" },
 	{ "/File/Save",		NULL,	save_fpd,	0, "<Item>" },
 	{ "/File/Save as",	NULL,	save_as_fpd,	0, "<Item>" },
         { "/File/sep1",		NULL,	NULL,		0, "<Separator>" },
@@ -103,6 +103,8 @@ static GtkItemFactoryEntry menu_entries[] = {
         { "/File/Write Postscript",
 				NULL,	write_ps,	0, "<Item>" },
         { "/File/sep2",		NULL,	NULL,		0, "<Separator>" },
+        { "/File/Reload",	NULL,	reload,		0, "<Item>" },
+        { "/File/sep3",		NULL,	NULL,		0, "<Separator>" },
         { "/File/Quit",		NULL,	gtk_main_quit,	0, "<Item>" },
 	{ "/View",		NULL,	NULL,		0, "<Branch>" },
 	{ "/View/Zoom in",	NULL,	zoom_in_center,	0, "<Item>" },
@@ -128,6 +130,9 @@ static void make_menu_bar(GtkWidget *hbox)
 
 	gtk_widget_set_sensitive(
 	    gtk_item_factory_get_item(factory, "/File/Save"), !no_save);
+	gtk_widget_set_sensitive(
+	    gtk_item_factory_get_item(factory, "/File/Reload"),
+	    no_save && !!save_file_name);
 }
 
 
@@ -278,7 +283,7 @@ static void make_center_area(GtkWidget *vbox)
 
 	paned = gtk_hpaned_new();
 	gtk_box_pack_start(GTK_BOX(hbox), paned, TRUE, TRUE, 0);
-	
+
 	/* Frames */
 
 	frames_area = gtk_scrolled_window_new(NULL, NULL);
@@ -323,15 +328,22 @@ static void do_build_frames(void)
 void change_world(void)
 {
 	struct bbox before, after;
+	int reachable_is_active;
 
 	inst_deselect();
 	status_begin_reporting();
-	before = inst_get_bbox();
+	before = inst_get_bbox(NULL);
+	reachable_is_active = reachable_pkg && reachable_pkg == active_pkg;
 	instantiate();
-	after = inst_get_bbox();
+	if (reachable_is_active && reachable_pkg &&
+	     reachable_pkg != active_pkg) {
+		active_pkg = reachable_pkg;
+		instantiate();
+	}
+	after = inst_get_bbox(NULL);
 	label_in_box_bg(active_frame->label, COLOR_FRAME_SELECTED);
 	do_build_frames();
-	if (after.min.x < before.min.x || after.min.y < before.min.y || 
+	if (after.min.x < before.min.x || after.min.y < before.min.y ||
 	    after.max.x > before.max.x || after.max.y > before.max.y)
 		zoom_to_extents();
 	else

@@ -1,8 +1,8 @@
 /*
  * inst.c - Instance structures
  *
- * Written 2009-2011 by Werner Almesberger
- * Copyright 2009-2011 by Werner Almesberger
+ * Written 2009-2012 by Werner Almesberger
+ * Copyright 2009-2012 by Werner Almesberger
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 #include <math.h>
 
 #include "util.h"
+#include "error.h"
 #include "coord.h"
 #include "expr.h"
 #include "layer.h"
@@ -35,9 +36,10 @@
 struct inst *selected_inst = NULL;
 struct bbox active_frame_bbox;
 struct pkg *pkgs, *active_pkg, *curr_pkg;
+struct pkg *reachable_pkg = NULL;
 struct inst *frame_instantiating = NULL;
 
-static struct pkg *prev_pkgs;
+static struct pkg *prev_pkgs, *prev_reachable_pkg;
 
 static unsigned long active_set = 0;
 
@@ -282,7 +284,7 @@ static int __inst_select(struct coord pos, int tries)
 				best_dist = dist;
 			}
 		}
-	
+
 		if (selected_inst)
 			goto selected;
 	}
@@ -509,9 +511,9 @@ static void rect_status(struct coord a, struct coord b, unit_type width,
 
 	status_set_xy(d);
 	tip = "Angle of diagonal";
-	if (!d.x && !d.y)
+	if (!d.x && !d.y) {
 		status_set_angle(tip, "a = 0 deg");
-	else {
+	} else {
 		status_set_angle(tip, "a = %3.1f deg", theta(a, b));
 	}
 	if (d.x < 0)
@@ -579,6 +581,14 @@ static void propagate_bbox(const struct inst *inst)
 
 	update_bbox(&frame->bbox, inst->bbox.min);
 	update_bbox(&frame->bbox, inst->bbox.max);
+
+	if (curr_pkg->bbox.min.x || curr_pkg->bbox.min.y ||
+	    curr_pkg->bbox.max.x || curr_pkg->bbox.max.y) {
+		update_bbox(&curr_pkg->bbox, inst->bbox.min);
+		update_bbox(&curr_pkg->bbox, inst->bbox.max);
+	} else {
+		curr_pkg->bbox = inst->bbox;
+	}
 }
 
 
@@ -588,6 +598,25 @@ static void grow_bbox_by_width(struct bbox *bbox, unit_type width)
 	bbox->min.y -= width/2;
 	bbox->max.x += width/2;
 	bbox->max.y += width/2;
+}
+
+
+static int zero_sized(struct coord a, struct coord b, const char *fmt,
+    const char *arg)
+{
+	if (a.x == b.x && a.y == b.y) {
+		fail(fmt, "zero-sized", arg);
+		return 1;
+	}
+	if (a.x == b.x) {
+		fail(fmt, "zero-width", arg);
+		return 1;
+	}
+	if (a.y == b.y) {
+		fail(fmt, "zero-height", arg);
+		return 1;
+	}
+	return 0;
 }
 
 
@@ -716,9 +745,9 @@ static void do_move_to_vec(struct inst *inst, struct inst *to, int i)
 	walk = &frame->vecs;
 	while (*walk != to_vec) {
 		v = *walk;
-		if (!v->mark)
+		if (!v->mark) {
 			walk = &v->next;
-		else {
+		} else {
 			*walk = v->next;
 			v->next = *anchor;
 			*anchor = v;
@@ -895,6 +924,8 @@ int inst_pad(struct obj *obj, const char *name, struct coord a, struct coord b)
 {
 	struct inst *inst;
 
+	if (zero_sized(a, b, "%s pad \"%s\"", name))
+		return 0;
 	inst = add_inst(obj->u.pad.rounded ? &rpad_ops : &pad_ops,
 	    obj->u.pad.type == pt_normal || obj->u.pad.type == pt_bare ||
 	    obj->u.pad.type == pt_trace ?
@@ -931,6 +962,8 @@ int inst_hole(struct obj *obj, struct coord a, struct coord b)
 {
 	struct inst *inst;
 
+	if (zero_sized(a, b, "%s hole", NULL))
+		return 0;
 	inst = add_inst(&hole_ops, ip_hole, a);
 	inst->obj = obj;
 	inst->u.hole.other = b;
@@ -1051,6 +1084,7 @@ int inst_meas(struct obj *obj, struct coord from, struct coord to)
 	assert(inst);
 	inst->base = from;
 	inst->u.meas.end = to;
+	inst->u.meas.valid = 1;
 	/* @@@ we still need to consider the text size as well */
 	update_bbox(&inst->bbox, from);
 	update_bbox(&inst->bbox, to);
@@ -1073,6 +1107,7 @@ void inst_meas_hint(struct obj *obj, unit_type offset)
 	inst = add_inst(&meas_ops, ip_meas, zero);
 	inst->obj = obj;
 	inst->u.meas.offset = offset;
+	inst->u.meas.valid = 0;
 	inst->active = 1; /* measurements are always active */
 }
 
@@ -1171,7 +1206,7 @@ void inst_end_frame(const struct frame *frame)
 /* ----- package ----------------------------------------------------------- */
 
 
-void inst_select_pkg(const char *name)
+void inst_select_pkg(const char *name, int active)
 {
 	struct pkg **pkg;
 	enum inst_prio prio;
@@ -1190,15 +1225,20 @@ void inst_select_pkg(const char *name)
 		(*pkg)->n_samples = n_samples;
 	}
 	curr_pkg = *pkg;
+	if (active && name)
+		reachable_pkg = curr_pkg;
 }
 
 
 /* ----- misc. ------------------------------------------------------------- */
 
 
-struct bbox inst_get_bbox(void)
+struct bbox inst_get_bbox(const struct pkg *pkg)
 {
-	return pkgs->insts[ip_frame]->bbox;
+	if (pkg)
+		return pkg->bbox;
+	else
+		return pkgs->insts[ip_frame]->bbox;
 }
 
 
@@ -1243,8 +1283,10 @@ void inst_start(void)
 
 	active_frame_bbox = bbox_zero;
 	prev_pkgs = pkgs;
+	prev_reachable_pkg = reachable_pkg;
 	pkgs = NULL;
-	inst_select_pkg(NULL);
+	reachable_pkg = NULL;
+	inst_select_pkg(NULL, 0);
 	curr_pkg = pkgs;
 	frame_instantiating = NULL;
 }
@@ -1269,6 +1311,7 @@ void inst_revert(void)
 {
 	free_pkgs(pkgs);
 	pkgs = prev_pkgs;
+	reachable_pkg = prev_reachable_pkg;
 }
 
 
